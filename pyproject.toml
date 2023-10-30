@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "blueprint-project"
+name = "quote-recommender"
 version = "0.1.0"
-description = "Blueprint template for Python projects."
+description = "Quote Recommender Project - Part of the Data Integration Course in Winter Term 23/24 "
 authors = ["Mathis <mathun3003@gmail.com>"]
 readme = "README.md"
 
@@ -33,31 +33,31 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
 
     [tool.poe.tasks.typing]
     help = "Run MyPy checker on the code base"
-    cmd  = "mypy blueprint_project"
+    cmd  = "mypy src"
 
     [tool.poe.tasks.pep8]
     help = "Runs PEP8 (pycodestyle) checker on the code base"
-    cmd = "pycodestyle blueprint_project --max-line-length=120"
+    cmd = "pycodestyle src --max-line-length=120"
 
     [tool.poe.tasks.lint]
     help = "Run pylint"
-    cmd  = "pylint blueprint_project"
+    cmd  = "pylint src"
 
     [tool.poe.tasks.isort]
     help = "Sort imports. This affects the code base as this makes changes to affected files."
-    cmd = "isort blueprint_project"
+    cmd = "isort src"
 
     [tool.poe.tasks.black]
     help = "Format code using black. This affects the code base as this makes changes to affected files."
-    cmd = "black blueprint_project"
+    cmd = "black src"
 
     [tool.poe.tasks.style-black]
     help = "Validate black code style"
-    cmd  = "black blueprint_project --check --diff"
+    cmd  = "black src --check --diff"
 
     [tool.poe.tasks.style-isort]
     help = "Validate isort code style"
-    cmd  = "isort blueprint_project --check --diff"
+    cmd  = "isort src --check --diff"
 
     [tool.poe.tasks.style]
     help = "Validate code style"
@@ -66,7 +66,7 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
 
     [tool.poe.tasks.tests]
     help = "Run unit and feature tests"
-    cmd  = "pytest blueprint_project_tests --cov=blueprint_project -W ignore::DeprecationWarning"
+    cmd  = "pytest src_tests --cov=src -W ignore::DeprecationWarning"
 
     [tool.poe.tasks.ci]
     help     = "Execute all CI tasks"

@@ -1,1 +1,1 @@
-# Blueprint Project
+# Quotes Recommender
