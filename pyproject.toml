@@ -8,6 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
 poethepoet = "^0.22.1"
+scrapy = "^2.11.0"
 
 [tool.poetry.group.ci.dependencies]
 mypy = "^1.5.1"
@@ -118,7 +119,8 @@ disable = [
     "C0114",  # missing-module-docstring
     "W1203",  # logging-fstring-interpolation
     "E0213",  # no-self-argument
-    "E1101"   # no-member
+    "E1101",  # no-member
+    "W0511"   # To-Dos
 ]
 
 [build-system]
