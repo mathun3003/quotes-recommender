@@ -32,6 +32,10 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
     help = "Setup the project for development"
     cmd = "poetry install --sync --all-extras"
 
+    [tool.poe.tasks.scrape-goodreads]
+    help = "Run the goodreads-spider locally"
+    cmd = "scrapy crawl goodreads-spider"
+
     [tool.poe.tasks.typing]
     help = "Run MyPy checker on the code base"
     cmd  = "mypy src"
