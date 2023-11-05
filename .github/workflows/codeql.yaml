@@ -1,5 +1,14 @@
 name: Code Quality Analysis
-on: [push, pull_request, release]
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - '*'
+  release:
+    branches:
+      - 'release/*'
 
 jobs:
   # CodeQL analysis

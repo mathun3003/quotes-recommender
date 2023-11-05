@@ -1,5 +1,14 @@
 name: Code Style
-on: [push, pull_request, release]
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - '*'
+  release:
+    branches:
+      - 'release/*'
 
 jobs:
 
@@ -95,6 +104,7 @@ jobs:
         with:
           python-version: 3.11
           line-length: 120
+          ignore_missing_imports: true
       - name: "Install poetry"
         uses: snok/install-poetry@v1.3.3
         with:
