@@ -13,7 +13,10 @@ class GoodreadsSpider(scrapy.Spider):
     """Scraper to extract data from goodreads.com/quotes."""
 
     name = 'goodreads-spider'
-    start_urls = ['https://www.goodreads.com/quotes']
+    allowed_domains = ['goodreads.com'] 
+    start_urls = [
+        'https://www.goodreads.com/quotes'
+    ]
 
     # quote data
     QUOTE_SELECTOR: Final[str] = 'div.quote'
@@ -24,6 +27,7 @@ class GoodreadsSpider(scrapy.Spider):
     QUOTE_LIKES: Final[str] = 'a.smallText::text'
     QUOTE_FEED: Final[str] = 'a.smallText::attr(href)'
     QUOTE_AUTHOR_OR_TITLE: Final[str] = 'span.authorOrTitle::text'
+    QUOTE_TAGS: Final[str] = 'div.greyText.smallText.left'
 
     # user data
     USER_LIKE_FEED: Final[str] = 'div.elementList'
@@ -77,7 +81,9 @@ class GoodreadsSpider(scrapy.Spider):
                 QUOTE_NUM_LIKES_KEY: num_likes,
                 # yield quote feed url
                 QUOTE_FEED_URL_KEY: quote_feed,
-                # USER_URLS_KEY: user_urls,
+                # yield quote tags
+                QUOTE_TAGS_KEY: quote.css(self.QUOTE_TAGS)[0].css('a::text').extract(),
+                # TODO: USER_URLS_KEY: user_urls,
             }
         # get next page
         next_page = response.css(self.NEXT_SELECTOR).extract_first()
