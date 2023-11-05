@@ -6,7 +6,7 @@ from scrapy.exceptions import StopDownload
 from scrapy.http import Response
 
 from src.core.constants import QUOTE_NUM_LIKES_KEY, QUOTE_FEED_URL_KEY, QUOTE_TEXT_KEY, QUOTE_AUTHOR_KEY, \
-    QUOTE_AVATAR_KEY
+    QUOTE_AVATAR_KEY, QUOTE_TAGS_KEY
 
 
 class GoodreadsSpider(scrapy.Spider):
