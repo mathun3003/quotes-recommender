@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  redis:
+    container_name: redis-stack
+    image: redis/redis-stack:7.2.0-v6
+    restart: on-failure
+    ports:
+      - '127.0.0.1:6379:6379'
+      - '127.0.0.1:8001:8001'
+    volumes:
+      - cache:/data
+      - redis-data:/var/lib/redis/data
+    networks:
+      - quote-recommender
+    healthcheck:
+      test: [ "CMD", "redis-cli","ping" ]
+
+
+networks:
+  quote-recommender:
+
+volumes:
+  redis-data:
+  cache:
+    driver: local
