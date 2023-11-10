@@ -32,7 +32,7 @@ class QuotesSpider(scrapy.Spider):
                 "likes": quote.css("a.heart24::text").getall()
             }
 
-        next_page = "https://www.azquotes.com" + response.css("li.next a").attrib['href']
-        if next_page is not None:
+        next_page = response.urljoin(response.css("li.next a").attrib['href'])
+        if next_page:
             yield response.follow(next_page, callback = self.parse_author)
 
