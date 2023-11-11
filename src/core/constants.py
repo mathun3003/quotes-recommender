@@ -8,6 +8,7 @@ QUOTE_AUTHOR_KEY: Final[str] = 'author'
 QUOTE_TAGS_KEY: Final[str] = 'tags'
 QUOTE_NUM_LIKES_KEY: Final[str] = 'num_likes'
 QUOTE_AVATAR_KEY: Final[str] = 'avatar'
+QUOTE_AVATAR_IMG_KEY: Final[str] = 'avatar_img'
 QUOTE_FEED_URL_KEY: Final[str] = 'feed_url'
 
 # key constants for storing information about a user

@@ -6,7 +6,7 @@ from scrapy.exceptions import StopDownload
 from scrapy.http import Response
 
 from src.core.constants import QUOTE_NUM_LIKES_KEY, QUOTE_FEED_URL_KEY, QUOTE_TEXT_KEY, QUOTE_AUTHOR_KEY, \
-    QUOTE_AVATAR_KEY, QUOTE_TAGS_KEY
+    QUOTE_AVATAR_KEY, QUOTE_TAGS_KEY, QUOTE_AVATAR_IMG_KEY
 
 
 class GoodreadsSpider(scrapy.Spider):
@@ -23,6 +23,7 @@ class GoodreadsSpider(scrapy.Spider):
     QUOTE_DETAILS: Final[str] = 'quoteDetails'
     QUOTE_FOOTER: Final[str] = 'quoteFooter'
     QUOTE_AVATAR: Final[str] = 'a.leftAlignedImage.quoteAvatar::attr(href)'
+    QUOTE_AVATAR_IMG: Final[str] = 'a.leftAlignedImage.quoteAvatar img::attr(src)'
     QUOTE_TEXT: Final[str] = 'div.quoteText::text'
     QUOTE_LIKES: Final[str] = 'a.smallText::text'
     QUOTE_FEED: Final[str] = 'a.smallText::attr(href)'
@@ -67,13 +68,14 @@ class GoodreadsSpider(scrapy.Spider):
                 quote_feed = response.urljoin(quote_feed_list[0])
             # extract user data from a quote's feed
             # TODO: parse subpages
-            # user_urls = scrapy.Request(quote_feed, callback=self.parse_subpage)
+                # user_urls = scrapy.Request(quote_feed, callback=self.parse_subpage)
 
             # yield results
             yield {
                 # extract author
                 QUOTE_AUTHOR_KEY: quote.css(self.QUOTE_AUTHOR_OR_TITLE).get().strip(),
-                # TODO: extract avatar jpg file from src
+                # extract avatar jpg file from src
+                QUOTE_AVATAR_IMG_KEY: quote.css(self.QUOTE_AVATAR_IMG).extract(),
                 QUOTE_AVATAR_KEY: response.urljoin(quote.css(self.QUOTE_AVATAR).get()),
                 # extract text
                 QUOTE_TEXT_KEY: quote.css(self.QUOTE_TEXT).get().strip().lstrip('“').rstrip('”'),
