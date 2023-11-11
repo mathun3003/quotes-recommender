@@ -27,7 +27,7 @@ class GoodreadsSpider(scrapy.Spider):
     QUOTE_LIKES: Final[str] = 'a.smallText::text'
     QUOTE_FEED: Final[str] = 'a.smallText::attr(href)'
     QUOTE_AUTHOR_OR_TITLE: Final[str] = 'span.authorOrTitle::text'
-    QUOTE_TAGS: Final[str] = 'div.greyText.smallText.left'
+    QUOTE_TAGS: Final[str] = 'div.greyText.smallText.left a::text'
 
     # user data
     USER_LIKE_FEED: Final[str] = 'div.elementList'
@@ -82,7 +82,7 @@ class GoodreadsSpider(scrapy.Spider):
                 # yield quote feed url
                 QUOTE_FEED_URL_KEY: quote_feed,
                 # yield quote tags
-                QUOTE_TAGS_KEY: quote.css(self.QUOTE_TAGS)[0].css('a::text').extract(),
+                QUOTE_TAGS_KEY: quote.css(self.QUOTE_TAGS).extract(),
                 # TODO: USER_URLS_KEY: user_urls,
             }
         # get next page
