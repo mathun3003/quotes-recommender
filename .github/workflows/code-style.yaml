@@ -31,7 +31,6 @@ jobs:
         run: pip install mypy
       - name: "🔍 Run mypy"
         run: mypy src
-        uses: sasanquaneuf/mypy-github-action@releases/v1
         with:
           checkName: 'typing'   # NOTE: this needs to be the same as the job name
         env:
