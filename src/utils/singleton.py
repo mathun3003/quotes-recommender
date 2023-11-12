@@ -1,19 +1,22 @@
-from typing import Any, Optional
+from abc import abstractmethod
+from typing import Any
 
 
 class Singleton:
     """Base Singleton class"""
 
-    def __new__(cls, *args, **kwds) -> Optional[Any]:
+    def __new__(cls, *args: Any, **kwargs: Any) -> "Singleton":
         """overriding __new__ method"""
 
-        it = cls.__dict__.get("__it__")
+        it_id = '__it__'
+        it = cls.__dict__.get(it_id, None)
         if it is not None:
             return it
-        cls.__it__ = it = object.__new__(cls)
-        it.init(*args, **kwds)
+        it = object.__new__(cls)
+        setattr(cls, it_id, it)
+        it.init(*args, **kwargs)
         return it
 
-    def init(self, *args, **kwds) -> None:
+    @abstractmethod
+    def init(self, *args: Any, **kwargs: Any) -> None:
         """set init method"""
-        pass
