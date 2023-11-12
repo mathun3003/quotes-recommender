@@ -12,6 +12,5 @@ QUOTE_AVATAR_IMG_KEY: Final[str] = 'avatar_img'
 QUOTE_FEED_URL_KEY: Final[str] = 'feed_url'
 
 # key constants for storing information about a user
-USER_NAME_KEY: Final[str] = 'user_name'
-USER_LIKED_QUOTES_KEY: Final[str] = 'liked_quotes'
 USER_URLS_KEY: Final[str] = 'liked_user'
+USER_LIKED_QUOTES_KEY: Final[str] = 'liked_quotes'

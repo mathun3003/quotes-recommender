@@ -5,9 +5,9 @@ import scrapy
 from scrapy.exceptions import StopDownload
 from scrapy.http import Response
 
-from src.core.constants import QUOTE_NUM_LIKES_KEY, QUOTE_FEED_URL_KEY, QUOTE_TEXT_KEY, QUOTE_AUTHOR_KEY, \
+from src.core.constants import \
+    QUOTE_NUM_LIKES_KEY, QUOTE_FEED_URL_KEY, QUOTE_TEXT_KEY, QUOTE_AUTHOR_KEY, \
     QUOTE_AVATAR_KEY, QUOTE_TAGS_KEY, QUOTE_AVATAR_IMG_KEY, USER_URLS_KEY
-
 
 class GoodreadsSpider(scrapy.Spider):
     """Scraper to extract data from goodreads.com/quotes."""
@@ -32,8 +32,8 @@ class GoodreadsSpider(scrapy.Spider):
 
     # user data
     USER_LIKE_FEED: Final[str] = 'div.elementList'
-    USERNAME_LIKED_FEED: Final[str] = 'div.userData a::attr(title)'
     USER_URL: Final[str] = 'a.leftAlignedImage::attr(href)'
+    USER_LIKED_LINK: Final[str] = 'a.userName::attr(href)'
 
     # next page selector
     NEXT_SELECTOR: Final[str] = 'a.next_page::attr(href)'
@@ -51,13 +51,22 @@ class GoodreadsSpider(scrapy.Spider):
             # extract number of likes, get the digit
             yield scrapy.Request(response.urljoin(feed), callback=self.parse_subpage)
 
-        # # get next page
-        # next_page = response.css(self.NEXT_SELECTOR).extract_first()
-        # # paginate if available
-        # if next_page:
-        #     yield scrapy.Request(response.urljoin(next_page))
+        # get next page
+        next_page = response.css(self.NEXT_SELECTOR).extract_first()
+        # paginate if available
+        if next_page:
+            yield scrapy.Request(response.urljoin(next_page))
 
-
+    def extract_id(self, username):
+        USER_LIKED_ID_PATTERN = r'/user/show/(\d+)(?:-(\w+))?'
+        match = re.match(USER_LIKED_ID_PATTERN, username)
+        if match:
+            user_id = match.group(1)
+            username = match.group(2)
+            return {user_id: username}
+        else:
+            return None
+        
     def parse_subpage(self, response: Response) -> list[str]:
         """
         Function to crawl subpages from a starting url
@@ -74,6 +83,8 @@ class GoodreadsSpider(scrapy.Spider):
         else:
             # cast string to int
             num_likes = int(num_likes)
+        
+        user_ids = [self.extract_id(x) for x in response.css(self.USER_LIKED_LINK).extract()]
         # fetch subpage feed
         # yield results
         yield {
@@ -90,5 +101,6 @@ class GoodreadsSpider(scrapy.Spider):
             QUOTE_FEED_URL_KEY: response.url,
             # yield quote tags
             QUOTE_TAGS_KEY: response.css(self.QUOTE_TAGS).extract(),
-            USER_URLS_KEY: response.css(self.USERNAME_LIKED_FEED).extract()
+            USER_URLS_KEY: user_ids
         }
+        
