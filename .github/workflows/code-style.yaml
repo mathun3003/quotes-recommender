@@ -9,6 +9,7 @@ on:
   release:
     branches:
       - 'release/*'
+      - 'fix/*'
 
 jobs:
 
