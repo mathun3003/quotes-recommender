@@ -3,8 +3,8 @@ from typing import Any, Generator, Optional
 
 import redis
 
+from src.core.constants import TXT_ENCODING
 from src.document_store.constants import DEFAULT_BATCH_SIZE
-from src.gist.constants import TXT_ENCODING
 from src.utils.redis import RedisConfig
 
 logger = logging.getLogger(__name__)
