@@ -5,18 +5,15 @@ import scrapy
 from scrapy.exceptions import StopDownload
 from scrapy.http import Response
 
-from src.core.constants import \
-    QUOTE_NUM_LIKES_KEY, QUOTE_FEED_URL_KEY, QUOTE_TEXT_KEY, QUOTE_AUTHOR_KEY, \
-    QUOTE_AVATAR_KEY, QUOTE_TAGS_KEY, QUOTE_AVATAR_IMG_KEY, USER_URLS_KEY
+from src.quote_scraper.items import QuoteItem
+
 
 class GoodreadsSpider(scrapy.Spider):
     """Scraper to extract data from goodreads.com/quotes."""
 
     name = 'goodreads-spider'
-    allowed_domains = ['goodreads.com'] 
-    start_urls = [
-        'https://www.goodreads.com/quotes'
-    ]
+    allowed_domains = ['goodreads.com']
+    start_urls = ['https://www.goodreads.com/quotes']
 
     # filter masks for goodreads
     QUOTE_SELECTOR: Final[str] = 'div.quote'
@@ -40,6 +37,8 @@ class GoodreadsSpider(scrapy.Spider):
 
     # regex
     NUM_LIKES_REGEX: Final[str] = r'\b\d+\b'  # removes non-digits from string
+    USER_LIKED_ID_PATTERN = r'/user/show/(\d+)(?:-(\w+))?'
+
     def parse(self, response: Response, **kwargs: Any) -> Generator:
         """
         Function to select data from an object.
@@ -58,16 +57,19 @@ class GoodreadsSpider(scrapy.Spider):
             yield scrapy.Request(response.urljoin(next_page))
 
     def extract_id(self, username):
-        USER_LIKED_ID_PATTERN = r'/user/show/(\d+)(?:-(\w+))?'
-        match = re.match(USER_LIKED_ID_PATTERN, username)
+        """
+        # TODO: add description
+        :param username:
+        :return:
+        """
+        match = re.match(self.USER_LIKED_ID_PATTERN, username)
         if match:
             user_id = match.group(1)
             username = match.group(2)
             return {user_id: username}
-        else:
-            return None
-        
-    def parse_subpage(self, response: Response) -> list[str]:
+        return None
+
+    def parse_subpage(self, response: Response) -> Generator[QuoteItem, None, None]:
         """
         Function to crawl subpages from a starting url
         :param response: web response from scrapy
@@ -78,29 +80,23 @@ class GoodreadsSpider(scrapy.Spider):
         if len(num_likes_list) > 1:
             raise StopDownload(fail=True)
         # raise exception if result is not a a digit
-        if not (num_likes := num_likes_list[0]).isdigit():
+        if not num_likes_list[0].isdigit():
             raise ValueError('num_likes is not a digit. Failed to convert to int.')
-        else:
-            # cast string to int
-            num_likes = int(num_likes)
-        
+        # cast string to int
+        num_likes = int(num_likes_list[0].isdigit())
+
+        # TODO: extract user ID and username from response (use dict comprehension)
+        # TODO: construct UserItem in dict comprehension
         user_ids = [self.extract_id(x) for x in response.css(self.USER_LIKED_LINK).extract()]
         # fetch subpage feed
         # yield results
-        yield {
-            # extract author
-            QUOTE_AUTHOR_KEY: response.css(self.QUOTE_AUTHOR_OR_TITLE).get().strip(),
-            # extract avatar jpg file from src
-            QUOTE_AVATAR_IMG_KEY: response.css(self.QUOTE_AVATAR_IMG).extract(),
-            QUOTE_AVATAR_KEY: response.urljoin(response.css(self.QUOTE_AVATAR).get()),
-            # extract text
-            QUOTE_TEXT_KEY: response.css(self.QUOTE_TEXT).get().strip().lstrip('“').rstrip('”'),
-            # yield number of likes
-            QUOTE_NUM_LIKES_KEY: num_likes,
-            # yield quote feed url
-            QUOTE_FEED_URL_KEY: response.url,
-            # yield quote tags
-            QUOTE_TAGS_KEY: response.css(self.QUOTE_TAGS).extract(),
-            USER_URLS_KEY: user_ids
-        }
-        
+        yield QuoteItem(
+            author=response.css(self.QUOTE_AUTHOR_OR_TITLE).get().strip(),
+            avatar_img=response.css(self.QUOTE_AVATAR_IMG).extract(),
+            avatar=response.urljoin(response.css(self.QUOTE_AVATAR).get()),
+            text=response.css(self.QUOTE_TEXT).get().strip().lstrip('“').rstrip('”'),
+            num_likes=num_likes,
+            feed_url=response.url,
+            tags=response.css(self.QUOTE_TAGS).extract(),
+            liking_users=user_ids,
+        )
