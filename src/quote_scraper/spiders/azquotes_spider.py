@@ -1,8 +1,24 @@
+import re
 import scrapy
+from typing import Final
+
 
 class QuotesSpider(scrapy.Spider):
-    name = "einstein"
-    
+    name = "azquotes"
+
+    SELECTOR_AZ: Final[str] = "ul.authors a::attr(href)"
+    SELECTOR_POP_AUTHORS: Final[str] = "div.profile.most-popular a::attr(href)"
+    SELECTOR_QUOTE: Final[str] = "div.wrap-block"
+
+    SELECTOR_ID: Final[str] = "a.title::attr(id)"
+    SELECTOR_TEXT: Final[str] = "a.title::text"
+    SELECTOR_AUTHOR: Final[str] = "a.title::attr(data-author)"
+    SELECTOR_TAGS: Final[str] = "div.mytags a::text"
+    SELECTOR_LIKES: Final[str] = "a.heart24::text"
+
+    SELECTOR_NEXT_PAGE: Final[str] = "li.next a::attr(href)"
+
+
     def start_requests(self):
         url = "https://www.azquotes.com/quotes/authors/a/"
         yield scrapy.Request(url = url, callback=self.parse_alphabet)
@@ -10,29 +26,34 @@ class QuotesSpider(scrapy.Spider):
 
     def parse_alphabet(self, response):
 
-        alpabeth = response.css("ul.authors a::attr(href)").getall()
+        alpabeth = response.css(self.SELECTOR_AZ).getall()
         for url in alpabeth:
-            yield response.follow( url = "https://www.azquotes.com" + url, callback = self.parse_pop_authors)
+            yield response.follow(url=response.urljoin(url), callback = self.parse_pop_authors)
 
     def parse_pop_authors(self, response):
 
-        authors = response.css("div.profile.most-popular a::attr(href)").getall()
+        authors = response.css(self.SELECTOR_POP_AUTHORS).getall()
 
         for url in authors:
-            yield response.follow( url = "https://www.azquotes.com" + url, callback = self.parse_author)
+            yield response.follow(url=response.urljoin(url), callback = self.parse_author)
 
 
 
     def parse_author(self, response):
-        for quote in response.css("div.wrap-block"):
+        for quote in response.css(self.SELECTOR_QUOTE):
+
+            id_attr = quote.css(self.SELECTOR_ID).get()
+            id_number = re.search(r'\d+$', id_attr).group() if id_attr else None
+
             yield {
-                "text": quote.css('a.title::text').get(),
-                "author": quote.css("a.title").attrib["data-author"],
-                "tags": quote.css("div.mytags a::text").getall(),
-                "likes": quote.css("a.heart24::text").getall()
+                "id": id_number,
+                "text": quote.css(self.SELECTOR_TEXT).get(),
+                "author": quote.css(self.SELECTOR_AUTHOR).get(),
+                "tags": quote.css(self.SELECTOR_TAGS).getall(),
+                "likes": quote.css(self.SELECTOR_LIKES).get()
             }
 
-        next_page = response.urljoin(response.css("li.next a").attrib['href'])
+        next_page = response.css(self.SELECTOR_NEXT_PAGE).get()
         if next_page:
-            yield response.follow(next_page, callback = self.parse_author)
+            yield response.follow(url=response.urljoin(next_page), callback = self.parse_author)
 
