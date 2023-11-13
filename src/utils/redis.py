@@ -2,7 +2,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from yarl import URL
 
-from src.gist.constants import TXT_ENCODING
+from src.core.constants import TXT_ENCODING
 
 
 class RedisConfig(BaseSettings):
