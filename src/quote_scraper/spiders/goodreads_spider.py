@@ -7,7 +7,8 @@ from scrapy.http import Response
 
 from src.core.constants import \
     QUOTE_NUM_LIKES_KEY, QUOTE_FEED_URL_KEY, QUOTE_TEXT_KEY, QUOTE_AUTHOR_KEY, \
-    QUOTE_AVATAR_KEY, QUOTE_TAGS_KEY, QUOTE_AVATAR_IMG_KEY, USER_URLS_KEY
+    QUOTE_AVATAR_KEY, QUOTE_TAGS_KEY, QUOTE_AVATAR_IMG_KEY, USER_URLS_KEY, \
+    USER_ID, USER_NAME
 
 class GoodreadsSpider(scrapy.Spider):
     """Scraper to extract data from goodreads.com/quotes."""
@@ -63,7 +64,8 @@ class GoodreadsSpider(scrapy.Spider):
         if match:
             user_id = match.group(1)
             username = match.group(2)
-            return {user_id: username}
+            return {USER_ID:user_id,
+                    USER_NAME:username}
         else:
             return None
         
