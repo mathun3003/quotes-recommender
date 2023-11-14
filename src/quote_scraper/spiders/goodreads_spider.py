@@ -85,7 +85,7 @@ class GoodreadsSpider(scrapy.Spider):
         if not num_likes_list[0].isdigit():
             raise ValueError('num_likes is not a digit. Failed to convert to int.')
         # cast string to int
-        num_likes = int(num_likes_list[0].isdigit())
+        num_likes = int(num_likes_list[0])
         # user_id and user_name extracted via extract_id() in dictionary format
         user_ids = [self.extract_id(x) for x in response.css(self.USER_LIKED_LINK).extract()]
         # fetch subpage feed
