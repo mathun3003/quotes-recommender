@@ -5,8 +5,8 @@ from scrapy.item import Field
 class UserItem(Item):
     """Item defining a scraped user profile."""
 
-    user_id: int = Field(description="Unique identifier of a user.")
-    username: str = Field(description="The name of the user.")
+    user_ID: int = Field(description="Unique identifier of a user.")
+    user_name: str = Field(description="The name of the user.")
 
 
 class QuoteItem(Item):

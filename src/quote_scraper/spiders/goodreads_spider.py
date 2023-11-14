@@ -5,7 +5,7 @@ import scrapy
 from scrapy.exceptions import StopDownload
 from scrapy.http import Response
 
-from src.quote_scraper.items import QuoteItem
+from src.quote_scraper.items import QuoteItem, UserItem
 
 
 class GoodreadsSpider(scrapy.Spider):
@@ -58,15 +58,17 @@ class GoodreadsSpider(scrapy.Spider):
 
     def extract_id(self, username):
         """
-        # TODO: add description
-        :param username:
-        :return:
+        Function to extract the user_id and user_name via regexp. which
+        returns the result in a dictionary format
+        :param username: href link containing the ID and username information
         """
         match = re.match(self.USER_LIKED_ID_PATTERN, username)
         if match:
             user_id = match.group(1)
             username = match.group(2)
-            return {user_id: username}
+            return UserItem(
+                user_ID = user_id,
+                user_name= username)
         return None
 
     def parse_subpage(self, response: Response) -> Generator[QuoteItem, None, None]:
@@ -84,9 +86,7 @@ class GoodreadsSpider(scrapy.Spider):
             raise ValueError('num_likes is not a digit. Failed to convert to int.')
         # cast string to int
         num_likes = int(num_likes_list[0].isdigit())
-
-        # TODO: extract user ID and username from response (use dict comprehension)
-        # TODO: construct UserItem in dict comprehension
+        # user_id and user_name extracted via extract_id() in dictionary format
         user_ids = [self.extract_id(x) for x in response.css(self.USER_LIKED_LINK).extract()]
         # fetch subpage feed
         # yield results
