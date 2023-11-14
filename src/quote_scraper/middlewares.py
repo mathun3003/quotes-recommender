@@ -1,3 +1,6 @@
+# type: ignore
+# pylint: disable-all
+
 # Define here the models for your spider middleware
 #
 # See documentation in:
