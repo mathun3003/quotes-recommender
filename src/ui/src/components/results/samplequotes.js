@@ -46,5 +46,3 @@ export const quotes = [
   "Don't be pushed around by the fears in your mind. Be led by the dreams in your heart. - Roy T. Bennett",
   'The only person you are destined to become is the person you decide to be. - Ralph Waldo Emerson',
 ];
-
-console.log(quotes);

@@ -1,6 +1,6 @@
 /* Navbar.css */
 .navbar {
-  background-color: #092626;
+  background-color: var(--navbar-background-color);
   /* border-bottom: 1px solid rgb(43, 29, 29); */
 
   border-bottom: 1px solid rgb(43, 29, 29);
@@ -9,7 +9,7 @@
 
 .title {
   flex-grow: 1;
-  color: white;
+  color: var(--white);
   padding: 16px;
   font-weight: 600;
   font-size: 30px;
