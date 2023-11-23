@@ -7,17 +7,19 @@ services:
     image: qdrant/qdrant:v1.6.1
     restart: on-failure
     ports:
-      - '0.0.0.0:8000:8000'
-      - '0.0.0.0:6333:6333'
+      - '0.0.0.0:8888:8000'
+      - '0.0.0.0:9999:6333'
     volumes:
       - cache:/data
       - qdrant:/qdrant/storage:z
-      - ./config/production.yaml:/qdrant/config/production.yaml
+      - ./config/:/qdrant/config/
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://0.0.0.0:6333/healthz" ]
       interval: 200s
       timeout: 200s
       retries: 5
+    env_file:
+      - local.env
 
   redis:
     container_name: redis-stack

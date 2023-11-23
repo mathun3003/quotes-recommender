@@ -1,8 +1,8 @@
 from typing import Any
 
-from src.document_store.document_store_redis import RedisDocumentStore
-from src.utils.redis import RedisConfig
-from src.utils.singleton import Singleton
+from quotes_recommender.document_store.document_store_redis import RedisDocumentStore
+from quotes_recommender.utils.redis import RedisConfig
+from quotes_recommender.utils.singleton import Singleton
 
 
 class RedisDocumentStoreSingleton(Singleton):  # pylint: disable=too-few-public-methods

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "quote-recommender"
+name = "quotes-recommender"
 version = "0.1.0"
 description = "Quote Recommender Project - Part of the Data Integration Course in Winter Term 23/24 "
 authors = ["Mathis <mathun3003@gmail.com>"]
@@ -45,31 +45,31 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
 
     [tool.poe.tasks.typing]
     help = "Run MyPy checker on the code base"
-    cmd  = "mypy src"
+    cmd  = "mypy quotes_recommender"
 
     [tool.poe.tasks.pep8]
     help = "Runs PEP8 (pycodestyle) checker on the code base"
-    cmd = "pycodestyle src --max-line-length=120"
+    cmd = "pycodestyle quotes_recommender --max-line-length=120"
 
     [tool.poe.tasks.lint]
     help = "Run pylint"
-    cmd  = "pylint src"
+    cmd  = "pylint quotes_recommender"
 
     [tool.poe.tasks.isort]
     help = "Sort imports. This affects the code base as this makes changes to affected files."
-    cmd = "isort src"
+    cmd = "isort quotes_recommender"
 
     [tool.poe.tasks.black]
     help = "Format code using black. This affects the code base as this makes changes to affected files."
-    cmd = "black src"
+    cmd = "black quotes_recommender"
 
     [tool.poe.tasks.style-black]
     help = "Validate black code style"
-    cmd  = "black src --check --diff"
+    cmd  = "black quotes_recommender --check --diff"
 
     [tool.poe.tasks.style-isort]
     help = "Validate isort code style"
-    cmd  = "isort src --check --diff"
+    cmd  = "isort quotes_recommender --check --diff"
 
     [tool.poe.tasks.style]
     help = "Validate code style"
@@ -78,7 +78,7 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
 
     [tool.poe.tasks.tests]
     help = "Run unit and feature tests"
-    cmd  = "pytest tests --cov=src -W ignore::DeprecationWarning"
+    cmd  = "pytest tests --cov=quotes_recommender -W ignore::DeprecationWarning"
 
     [tool.poe.tasks.ci]
     help     = "Execute all CI tasks"
