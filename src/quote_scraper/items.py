@@ -1,16 +1,16 @@
+from pydantic import BaseModel, Extra, Field
 from scrapy import Item
-from scrapy.item import Field
 
 
 class UserItem(Item):
     """Item defining a scraped user profile."""
 
-    user_ID: int = Field(description="Unique identifier of a user.")
-    user_name: str = Field(description="The name of the user.")
+    user_id: int = Field(description="Unique identifier of a user.")
+    username: str = Field(description="The name of the user.")
 
 
-class QuoteItem(Item):
-    """Item defining a scraped quote."""
+class QuoteData(BaseModel, extra=Extra.forbid):
+    """Defining data model for quote (meta) data."""
 
     author: str = Field(description="Name of the author")
     avatar_img: str = Field(description="Embedded link to avatar image.", serialize=True)
@@ -20,3 +20,10 @@ class QuoteItem(Item):
     feed_url: str = Field(description="The URL to the quote's feed.", serialize=True)
     tags: list[str] = Field(description="List of tags the quote got assigned to.")
     liking_users: list[UserItem] = Field(description="List of users that liked the quote.")
+
+
+class QuoteItem(Item):
+    """Item defining a scraped quote."""
+
+    id: int = Field(description="The unique ID of the quote.")
+    data: QuoteData = Field(description="(Meta) data of the quote.")
