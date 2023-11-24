@@ -26,6 +26,8 @@ isort = "^5.12.0"
 pytest = "^7.1.2"
 pytest-cov = "^3.0.0"
 pycodestyle = "^2.11.0"
+pytest-dotenv = "^0.5.2"
+dvc = {extras = ["ssh"], version = "^3.30.1"}
 
 [tool.poetry.extras]
 notebooks = ["jupyter"]
@@ -41,7 +43,11 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
 
     [tool.poe.tasks.dev-setup]
     help = "Setup the project for development"
-    cmd = "poetry install --sync --all-extras"
+    sequence = [
+        {cmd = "poetry install --sync"},
+        {cmd = "docker compose up -d qdrant"},
+        {cmd = "poetry run dvc pull"},
+    ]
 
     [tool.poe.tasks.typing]
     help = "Run MyPy checker on the code base"
@@ -78,7 +84,7 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
 
     [tool.poe.tasks.tests]
     help = "Run unit and feature tests"
-    cmd  = "pytest tests --cov=quotes_recommender -W ignore::DeprecationWarning"
+    cmd  = "pytest tests --cov=quotes_recommender"
 
     [tool.poe.tasks.ci]
     help     = "Execute all CI tasks"
@@ -133,6 +139,10 @@ disable = [
     "E1101",  # no-member
     "W0511"   # To-Dos
 ]
+
+[tool.pytest.ini_options]
+filterwarnings=["ignore::DeprecationWarning", "ignore::UserWarning:"]
+env_files="local.env"
 
 [build-system]
 requires = ["poetry-core"]
