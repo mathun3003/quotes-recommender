@@ -11,6 +11,4 @@ class QdrantVectorStoreSingleton(Singleton):  # pylint: disable=too-few-public-m
     def init(self, *args: Any, **kwargs: Any) -> None:  # pylint: disable=unused-argument
         """Init qdrant vector store"""
 
-        self.vector_store = QdrantVectorStore(QdrantConfig(
-            
-        ))
+        self.vector_store = QdrantVectorStore(QdrantConfig())

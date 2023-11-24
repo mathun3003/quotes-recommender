@@ -1,4 +1,4 @@
-from scrapy import Item, Field
+from scrapy import Field, Item
 from yarl import URL
 
 
