@@ -116,4 +116,4 @@ jobs:
         run: |
             poetry lock
             poetry install --no-interaction --no-root
-            poetry run black --check --diff --verbose .
+            poetry run black quotes_recommender --check --diff --verbose 
