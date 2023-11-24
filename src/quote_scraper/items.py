@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Extra, Field
-from scrapy import Item
+from pydantic import Field
+from scrapy import Item, Field
+from yarl import URL
 
 
 class UserItem(Item):
@@ -9,15 +10,15 @@ class UserItem(Item):
     username: str = Field(description="The name of the user.")
 
 
-class QuoteData(BaseModel, extra=Extra.forbid):
+class QuoteData(Item):
     """Defining data model for quote (meta) data."""
 
     author: str = Field(description="Name of the author")
-    avatar_img: str = Field(description="Embedded link to avatar image.", serialize=True)
-    avatar: str = Field(description="")  # TODO: add appropriate description
+    avatar_img: URL = Field(description="Embedded link to avatar image.", serialize=True)
+    avatar: URL = Field(description="")  # TODO: add appropriate description
     text: str = Field(description="The actual quote.")
     num_likes: int = Field(description="Number of likes the quote received.")
-    feed_url: str = Field(description="The URL to the quote's feed.", serialize=True)
+    feed_url: URL = Field(description="The URL to the quote's feed.", serialize=True)
     tags: list[str] = Field(description="List of tags the quote got assigned to.")
     liking_users: list[UserItem] = Field(description="List of users that liked the quote.")
 
