@@ -1,5 +1,6 @@
 import logging
 from typing import Any
+import requests
 
 from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
@@ -15,7 +16,8 @@ logger = logging.getLogger(__name__)
 class QdrantVectorStore:
     """Redis document store class for inserting, querying, and searching tasks"""
 
-    def __init__(self, qdrant_config: QdrantConfig, on_disk: bool = True, timeout: float = 60.0, ping: bool = True) -> \
+    def __init__(self, qdrant_config: QdrantConfig, on_disk: bool = True, timeout: float = 60.0, ping: bool = True,
+                 use_https: bool = False) -> \
             None:
         """
         Init Qdrant vector store instance.
@@ -32,16 +34,17 @@ class QdrantVectorStore:
 
         # get qdrant client
         self.client = QdrantClient(
-            url=qdrant_config.http_url,
+            url=qdrant_config.https_url if use_https else qdrant_config.http_url,
             api_key=qdrant_config.api_key,
             timeout=timeout
         )
 
         # test connection
         if ping:
-            # FIXME
-            # if 'passed' not in self.client.http.service_api.livez():
-            #     raise ConnectionError("Cannot connect to Qdrant.")
+            # use workaround instead of service API as it contains a bug
+            response = requests.get(f'{qdrant_config.https_url if use_https else qdrant_config.http_url}/healthz')
+            if not response.ok:
+                raise ConnectionError("Cannot connect to Qdrant.")
             logger.info('Connected to Qdrant.')
 
         try:
@@ -79,7 +82,6 @@ class QdrantVectorStore:
         self.client.upsert(
             collection_name=collection_name,
             points=[PointStruct(
-                # TODO:
             )]
         )
 

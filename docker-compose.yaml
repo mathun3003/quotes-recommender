@@ -14,7 +14,7 @@ services:
       - qdrant:/qdrant/storage:z
       - ./config/:/qdrant/config/
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://0.0.0.0:6333/healthz" ]
+      test: [ "CMD", "curl", "-f", "http://0.0.0.0:9999/healthz" ]
       interval: 200s
       timeout: 200s
       retries: 5
