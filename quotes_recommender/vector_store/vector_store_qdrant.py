@@ -78,10 +78,11 @@ class QdrantVectorStore:
         ):
             raise ConnectionError(f'Could not create {DEFAULT_PAYLOAD_INDEX} index on {DEFAULT_QUOTE_COLLECTION}.')
 
-    def upsert_quote(self, collection_name: str = DEFAULT_QUOTE_COLLECTION):
+    def upsert_quote(self, quote: QuoteItem, collection_name: str = DEFAULT_QUOTE_COLLECTION):
         self.client.upsert(
             collection_name=collection_name,
             points=[PointStruct(
+
             )]
         )
 
