@@ -67,7 +67,7 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
 
     [tool.poe.tasks.tests]
     help = "Run unit and feature tests"
-    cmd  = "pytest src_tests --cov=src -W ignore::DeprecationWarning"
+    cmd  = "pytest tests --cov=src -W ignore::DeprecationWarning"
 
     [tool.poe.tasks.ci]
     help     = "Execute all CI tasks"
