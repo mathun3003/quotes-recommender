@@ -7,7 +7,6 @@ from scrapy.http import Response
 
 from src.quote_scraper.items import QuoteItem, UserItem, QuoteData
 
-
 class GoodreadsSpider(scrapy.Spider):
     """Scraper to extract data from goodreads.com/quotes."""
 
@@ -36,8 +35,9 @@ class GoodreadsSpider(scrapy.Spider):
     NEXT_SELECTOR: Final[str] = 'a.next_page::attr(href)'
 
     # regex
-    NUM_LIKES_REGEX: Final[str] = r'\b\d+\b'  # removes non-digits from string
-    USER_LIKED_ID_PATTERN = r'/user/show/(\d+)(?:-(\w+))?'
+    NUM_LIKES_REGEX: Final[str] = r'\b\d+\b' 
+    USER_LIKED_ID_PATTERN = r'/user/show/(\d+)-(\w+)(?:-(\w+))?'
+    QUOTE_ID_PATTERN = r'/quotes/(\d+)-\w+'
 
     def parse(self, response: Response, **kwargs: Any) -> Generator:
         """
@@ -56,19 +56,21 @@ class GoodreadsSpider(scrapy.Spider):
         if next_page:
             yield scrapy.Request(response.urljoin(next_page))
 
-    def extract_id(self, username):
+    def extract_liked_user_id_name(self, to_be_extracted):
         """
         Function to extract the user_id and user_name via regexp. which
         returns the result in a dictionary format
         :param username: href link containing the ID and username information
         """
-        match = re.match(self.USER_LIKED_ID_PATTERN, username)
-        if match:
-            user_id = match.group(1)
-            username = match.group(2)
+        match_user = re.match(self.USER_LIKED_ID_PATTERN, to_be_extracted)
+        if match_user:
+            user_id = match_user.group(1)
+            prename = match_user.group(2)
+            name = match_user.group(3) if match_user.group(3) else ""            
+            full_name = f"{prename} {name}" if name else prename
             return UserItem(
-                user_id=user_id,
-                username=username)
+                user_id= int(user_id),
+                username=full_name)
 
     def parse_subpage(self, response: Response) -> Generator[QuoteItem, None, None]:
         """
@@ -85,13 +87,12 @@ class GoodreadsSpider(scrapy.Spider):
             raise ValueError('num_likes is not a digit. Failed to convert to int.')
         # cast string to int
         num_likes = int(num_likes_list[0])
-        # user_id and user_name extracted via extract_id() in dictionary format
-        user_ids = [self.extract_id(x) for x in response.css(self.USER_LIKED_LINK).extract()]
-        # fetch subpage feed
+        # user_id and user_name extracted via extract_liked_user_id_name() in dictionary format
+        user_ids = [self.extract_liked_user_id_name(x) for x in response.css(self.USER_LIKED_LINK).extract()]
         # yield results
         yield QuoteItem(
-            id="",  # TODO: parse ID and add it here
-            data=QuoteData(
+            id = int(re.search(self.QUOTE_ID_PATTERN,response.url).group(1)),
+            data = QuoteData(
                 author=response.css(self.QUOTE_AUTHOR_OR_TITLE).get().strip(),
                 avatar_img=response.css(self.QUOTE_AVATAR_IMG).extract(),
                 avatar=response.urljoin(response.css(self.QUOTE_AVATAR).get()),

@@ -1,4 +1,3 @@
-from pydantic import Field
 from scrapy import Item, Field
 from yarl import URL
 
