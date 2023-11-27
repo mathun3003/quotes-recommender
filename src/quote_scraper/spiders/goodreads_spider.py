@@ -36,7 +36,7 @@ class GoodreadsSpider(scrapy.Spider):
 
     # regex
     NUM_LIKES_REGEX: Final[str] = r'\b\d+\b' 
-    USER_LIKED_ID_PATTERN = r'/user/show/(\d+)-(\w+)(?:-(\w+))?'
+    USER_LIKED_ID_PATTERN = r'/user\/show\/(\d+)-?([a-zA-Z0-9_-]+)'
     QUOTE_ID_PATTERN = r'/quotes/(\d+)-\w+'
 
     def parse(self, response: Response, **kwargs: Any) -> Generator:
@@ -56,7 +56,7 @@ class GoodreadsSpider(scrapy.Spider):
         if next_page:
             yield scrapy.Request(response.urljoin(next_page))
 
-    def extract_liked_user_id_name(self, to_be_extracted):
+    def extract_liked_user_id_name(self, to_be_extracted, response: Response):
         """
         Function to extract the user_id and user_name via regexp. which
         returns the result in a dictionary format
@@ -64,13 +64,12 @@ class GoodreadsSpider(scrapy.Spider):
         """
         match_user = re.match(self.USER_LIKED_ID_PATTERN, to_be_extracted)
         if match_user:
-            user_id = match_user.group(1)
-            prename = match_user.group(2)
-            name = match_user.group(3) if match_user.group(3) else ""            
-            full_name = f"{prename} {name}" if name else prename
+            userId = match_user.group(1)
+            userName = match_user.group(2)
             return UserItem(
-                user_id= int(user_id),
-                username=full_name)
+                user_id = int(userId),
+                user_name = userName
+            )
 
     def parse_subpage(self, response: Response) -> Generator[QuoteItem, None, None]:
         """
@@ -88,7 +87,7 @@ class GoodreadsSpider(scrapy.Spider):
         # cast string to int
         num_likes = int(num_likes_list[0])
         # user_id and user_name extracted via extract_liked_user_id_name() in dictionary format
-        user_ids = [self.extract_liked_user_id_name(x) for x in response.css(self.USER_LIKED_LINK).extract()]
+        user_ids = [self.extract_liked_user_id_name(x, response=response) for x in response.css(self.USER_LIKED_LINK).extract()]
         # yield results
         yield QuoteItem(
             id = int(re.search(self.QUOTE_ID_PATTERN,response.url).group(1)),
@@ -103,3 +102,6 @@ class GoodreadsSpider(scrapy.Spider):
                 liking_users=user_ids,
             )
         )
+        next_page = response.css(self.NEXT_SELECTOR).extract_first()
+        if next_page:
+            yield scrapy.Request(response.urljoin(next_page), callback=self.parse_subpage)

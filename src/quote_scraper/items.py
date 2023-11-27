@@ -6,7 +6,7 @@ class UserItem(Item):
     """Item defining a scraped user profile."""
 
     user_id: int = Field(description="Unique identifier of a user.")
-    username: str = Field(description="The name of the user.")
+    user_name: str = Field(description="The name of the user.")
 
 
 class QuoteData(Item):
