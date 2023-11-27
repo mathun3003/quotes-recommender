@@ -16,11 +16,13 @@ jobs:
   typing:
     name: MyPy
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Setup Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v3
         with:
-          python-version: 3.x
+          python-version: 3.11.0
           architecture: x64
           plugins : |
             pydantic.mypy
