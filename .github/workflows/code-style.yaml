@@ -42,7 +42,7 @@ jobs:
           poetry install --no-interaction --no-root --all-extras
       - name: "🔍 Run mypy"
         run: |
-          poetry run mypy src/
+          poetry run mypy quotes_recommender/
 
   # Pep8
   pep8:
@@ -87,7 +87,7 @@ jobs:
           poetry install --no-interaction --no-root --all-extras
       - name: "🔍 Lint Code"
         run: |
-          poetry run pylint -d C0103,C0114,E0213,E1101,W1203,W0511 $(git ls-files '*.py')
+          poetry run pylint quotes_recommender/ -d C0103,C0114,E0213,E1101,W1203,W0511 $(git ls-files '*.py')
         # disable: invalid-name, missing-module-docstring, no-self-argument, no-member, logging-fstring-interpolation, to-dos
 
   # isort
@@ -99,6 +99,9 @@ jobs:
       - uses: isort/isort-action@v1
         with:
           requirements-files: "pyproject.toml"
+      - name: "🔍 Run isort"
+        run: |
+          poe style-isort
 
   # Formatting
   black:
