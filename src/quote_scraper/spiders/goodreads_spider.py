@@ -93,7 +93,7 @@ class GoodreadsSpider(scrapy.Spider):
             id = int(re.search(self.QUOTE_ID_PATTERN,response.url).group(1)),
             data = QuoteData(
                 author=response.css(self.QUOTE_AUTHOR_OR_TITLE).get().strip(),
-                avatar_img=response.css(self.QUOTE_AVATAR_IMG).extract(),
+                avatar_img=response.css(self.QUOTE_AVATAR_IMG).extract_first(),
                 avatar=response.urljoin(response.css(self.QUOTE_AVATAR).get()),
                 text=response.css(self.QUOTE_TEXT).get().strip().lstrip('“').rstrip('”'),
                 num_likes=num_likes,
@@ -102,6 +102,3 @@ class GoodreadsSpider(scrapy.Spider):
                 liking_users=user_ids,
             )
         )
-        next_page = response.css(self.NEXT_SELECTOR).extract_first()
-        if next_page:
-            yield scrapy.Request(response.urljoin(next_page), callback=self.parse_subpage)
