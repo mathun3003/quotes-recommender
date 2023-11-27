@@ -76,7 +76,7 @@ jobs:
       - name: "📦 Install dependencies"
         run: |
           poetry lock
-          poetry install --no-interaction --no-root
+          poetry install --no-interaction --no-root --all-extras
       - name: "🔍 Lint Code"
         run: |
           poetry run pylint -d C0103,C0114,E0213,E1101,W1203,W0511 $(git ls-files '*.py')
