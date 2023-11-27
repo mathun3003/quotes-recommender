@@ -87,7 +87,7 @@ jobs:
           poetry install --no-interaction --no-root --all-extras
       - name: "🔍 Lint Code"
         run: |
-          poetry run pylint -d C0103,C0114,E0213,E1101,W1203,W0511 $(git ls-files '*.py')
+          poetry run pylint src -d C0103,C0114,E0213,E1101,W1203,W0511 $(git ls-files 'src/**/*.py')
         # disable: invalid-name, missing-module-docstring, no-self-argument, no-member, logging-fstring-interpolation, to-dos
 
   # isort
