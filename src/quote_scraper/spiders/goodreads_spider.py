@@ -14,10 +14,8 @@ class GoodreadsSpider(scrapy.Spider):
     allowed_domains = ['goodreads.com']
     start_urls = ['https://www.goodreads.com/quotes']
 
-    # filter masks for goodreads
+    # Filter masks for goodreads
     QUOTE_SELECTOR: Final[str] = 'div.quote'
-    QUOTE_DETAILS: Final[str] = 'quoteDetails'
-    QUOTE_FOOTER: Final[str] = 'quoteFooter'
     QUOTE_AVATAR: Final[str] = 'a.leftAlignedImage.quoteAvatar::attr(href)'
     QUOTE_AVATAR_IMG: Final[str] = 'a.leftAlignedImage.quoteAvatar img::attr(src)'
     QUOTE_TEXT: Final[str] = 'h1.quoteText::text'
@@ -26,15 +24,14 @@ class GoodreadsSpider(scrapy.Spider):
     QUOTE_AUTHOR_OR_TITLE: Final[str] = 'span.authorOrTitle::text'
     QUOTE_TAGS: Final[str] = 'div.greyText.smallText.left a::text'
 
-    # user data
+    # User data
     USER_LIKE_FEED: Final[str] = 'div.elementList'
-    USER_URL: Final[str] = 'a.leftAlignedImage::attr(href)'
     USER_LIKED_LINK: Final[str] = 'a.userName::attr(href)'
 
-    # next page selector
+    # Next page selector
     NEXT_SELECTOR: Final[str] = 'a.next_page::attr(href)'
 
-    # regex
+    # Regex
     NUM_LIKES_REGEX: Final[str] = r'\b\d+\b' 
     USER_LIKED_ID_PATTERN = r'/user\/show\/(\d+)-?([a-zA-Z0-9_-]+)'
     QUOTE_ID_PATTERN = r'/quotes/(\d+)-\w+'
@@ -47,12 +44,10 @@ class GoodreadsSpider(scrapy.Spider):
         :return: Generator object
         """
         for feed in response.css(self.QUOTE_FEED).extract():
-            # extract number of likes, get the digit
-            yield scrapy.Request(response.urljoin(feed), callback=self.parse_subpage)
-
-        # get next page
+            yield scrapy.Request(response.urljoin(feed), callback = self.parse_subpage)
+        
+        # Get next pages
         next_page = response.css(self.NEXT_SELECTOR).extract_first()
-        # paginate if available
         if next_page:
             yield scrapy.Request(response.urljoin(next_page))
 
@@ -69,7 +64,7 @@ class GoodreadsSpider(scrapy.Spider):
             return UserItem(
                 user_id = int(user_id),
                 user_name = user_name
-            )
+            )  
 
     def parse_subpage(self, response: Response) -> Generator[QuoteItem, None, None]:
         """
@@ -78,28 +73,32 @@ class GoodreadsSpider(scrapy.Spider):
         :return: list user URLs
         """
         num_likes_list: list[str] = re.findall(self.NUM_LIKES_REGEX, response.css(self.QUOTE_LIKES).get())
-        # raise exception if multiple values are found for regex matching
         if len(num_likes_list) > 1:
-            raise StopDownload(fail=True)
-        # raise exception if result is not a a digit
+            raise StopDownload(fail = True)
         if not num_likes_list[0].isdigit():
             raise ValueError('num_likes is not a digit. Failed to convert to int.')
-        # cast string to int
         num_likes = int(num_likes_list[0])
-        # user_id and user_name extracted via extract_liked_user_id_name() in dictionary format
-        liking_users = [self.extract_liked_user_id_name(liked_user_link) for liked_user_link in response.css(self.USER_LIKED_LINK).extract()]
-        # yield results
-        yield QuoteItem(
-            id = int(re.search(self.QUOTE_ID_PATTERN,response.url).group(1)),
-            data = QuoteData(
-                author=response.css(self.QUOTE_AUTHOR_OR_TITLE).get().strip(),
-                avatar_img=response.css(self.QUOTE_AVATAR_IMG).extract_first(),
-                avatar=response.urljoin(response.css(self.QUOTE_AVATAR).get()),
-                text=response.css(self.QUOTE_TEXT).get().strip().lstrip('“').rstrip('”'),
-                num_likes=num_likes,
-                feed_url=response.url,
-                tags=response.css(self.QUOTE_TAGS).extract(),
-                liking_users=liking_users,
-            )
-        )
+        current_page_liking_users = [self.extract_liked_user_id_name(liked_user_link) 
+                                     for liked_user_link in response.css(self.USER_LIKED_LINK).extract()]
+
+        # Accumulate liking users across all pages
+        liking_users = response.meta.get('liking_users', []) + current_page_liking_users
+        next_user_page = response.css(self.NEXT_SELECTOR).extract_first()
+        if "page=3" not in next_user_page: # Testing: Remove -> "page=3" not in...
+            # Pass the accumulated liking users to the next page
+            yield scrapy.Request(response.urljoin(next_user_page), callback=self.parse_subpage, meta={'liking_users': liking_users})
+        else:
+            yield QuoteItem(
+                id = int(re.search(self.QUOTE_ID_PATTERN, response.url).group(1)),
+                data = QuoteData(
+                    author = response.css(self.QUOTE_AUTHOR_OR_TITLE).get().strip(),
+                    avatar_img = response.css(self.QUOTE_AVATAR_IMG).extract_first(),
+                    avatar = response.urljoin(response.css(self.QUOTE_AVATAR).get()),
+                    text = response.css(self.QUOTE_TEXT).get().strip().lstrip('“').rstrip('”'),
+                    num_likes = num_likes,
+                    feed_url = response.url,
+                    tags = response.css(self.QUOTE_TAGS).extract(),
+                    liking_users = liking_users,
+                )
+             )
         
