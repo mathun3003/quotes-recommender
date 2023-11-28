@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "quote-recommender"
+name = "quotes-recommender"
 version = "0.1.0"
 description = "Quote Recommender Project - Part of the Data Integration Course in Winter Term 23/24 "
 authors = ["Mathis <mathun3003@gmail.com>"]
