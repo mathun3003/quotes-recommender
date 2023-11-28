@@ -86,7 +86,8 @@ class GoodreadsSpider(scrapy.Spider):
         next_user_page = response.css(self.NEXT_SELECTOR).extract_first()
         if "page=3" not in next_user_page: # Testing: Remove -> "page=3" not in...
             # Pass the accumulated liking users to the next page
-            yield scrapy.Request(response.urljoin(next_user_page), callback=self.parse_subpage, meta={'liking_users': liking_users})
+            yield scrapy.Request(response.urljoin(next_user_page), callback = self.parse_subpage, 
+                                 meta = {'liking_users': liking_users})
         else:
             yield QuoteItem(
                 id = int(re.search(self.QUOTE_ID_PATTERN, response.url).group(1)),
