@@ -10,7 +10,8 @@ class GoodreadsToRedisPipeline:
     """Goodreads Scrapy Pipeline"""
 
     def process_item(self, item, spider):
-        print("Pipeline" + item['author'][0])
+        print("ITEM:")
+        print(item)
         adapter = ItemAdapter(item)
         return item
 
