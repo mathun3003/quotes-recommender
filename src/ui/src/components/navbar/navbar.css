@@ -1,0 +1,16 @@
+/* Navbar.css */
+.navbar {
+  background-color: var(--navbar-background-color);
+  /* border-bottom: 1px solid rgb(43, 29, 29); */
+
+  border-bottom: 1px solid rgb(43, 29, 29);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Adjust the values as needed */
+}
+
+.title {
+  flex-grow: 1;
+  color: var(--white);
+  padding: 16px;
+  font-weight: 600;
+  font-size: 30px;
+}
