@@ -3,7 +3,11 @@ from typing import Any
 
 
 class Singleton:
-    """Base Singleton class"""
+    """
+    Base Singleton class
+
+    Reference: https://www.python.org/download/releases/2.2/descrintro/#__new__
+    """
 
     def __new__(cls, *args: Any, **kwargs: Any) -> "Singleton":
         """overriding __new__ method"""

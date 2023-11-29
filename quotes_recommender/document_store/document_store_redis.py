@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Generator, Optional
+from typing import Generator, Optional
 
 import redis
 
@@ -10,7 +10,7 @@ from quotes_recommender.utils.redis import RedisConfig
 logger = logging.getLogger(__name__)
 
 
-class RedisDocumentStore:
+class RedisDocumentStore:  # pylint: disable=too-few-public-methods
     """Redis document store class for inserting, querying, and searching tasks"""
 
     def __init__(self, redis_config: RedisConfig, ping: bool = True) -> None:
@@ -24,8 +24,8 @@ class RedisDocumentStore:
             raise ConnectionError("No Redis host or port specified.")
         # get redis instance
         self.redis_instance = redis.Redis(
-            host=str(redis_config.redis_url.host),
-            port=int(redis_config.redis_url.host),
+            host=str(redis_config.host),
+            port=int(redis_config.port),
             db=redis_config.db,
             password=redis_config.password,
             username=redis_config.user,
@@ -35,10 +35,6 @@ class RedisDocumentStore:
             if not self.redis_instance.ping():
                 raise ConnectionError("Cannot connect to Redis.")
             logger.info('Connected to Redis.')
-
-    def get_content_based_recommendation(self) -> Any:
-        """Get content-based recommendations"""
-        # TODO
 
     def scan(
         self, search_str: str, batch_size: int = DEFAULT_BATCH_SIZE, type_filter: Optional[str] = None
