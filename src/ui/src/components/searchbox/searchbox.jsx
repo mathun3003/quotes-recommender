@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './searchbox.css';
 import {
   SearchField,
@@ -37,6 +37,7 @@ const quoteFinderTags = [
 ];
 
 export const SearchBox = () => {
+  const [open, setOpen] = useState(false);
   return (
     <div className="search-box">
       <Stack spacing={2} alignItems="center">
@@ -64,6 +65,13 @@ export const SearchBox = () => {
             options={quoteFinderTags}
             getOptionLabel={(option) => option.title}
             PaperComponent={PaperComponentContainer}
+            open={open}
+            onOpen={() => setOpen(true)}
+            onClose={(event, reason) => {
+              if (reason !== 'selectOption') {
+                setOpen(false);
+              }
+            }}
             renderInput={(params) => (
               <TagsField {...params} placeholder="Tags" />
             )}
