@@ -30,7 +30,7 @@ jobs:
       - name: "☁️ Checkout Repository"
         uses: actions/checkout@v3
       - name: "Install poetry"
-        uses: snok/install-poetry@v1.3.3
+        uses: snok/install-poetry@v1
         with:
           version: 1.3.2
           virtualenvs-create: true
@@ -42,21 +42,38 @@ jobs:
           poetry install --no-interaction --no-root --all-extras
       - name: "🔍 Run mypy"
         run: |
-          poetry run mypy src/
+          source $(poetry env info --path)/bin/activate
+          poe typing
 
   # Pep8
   pep8:
     name: PEP8
     runs-on: ubuntu-latest
     steps:
+      - name: Setup Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.11.0
+          architecture: x64
       - name: "☁️ Checkout Repository"
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: "🔍 Run PEP8"
-        uses: quentinguidee/pep8-action@v1
+      - name: "Install poetry"
+        uses: snok/install-poetry@v1
         with:
-          arguments: '--max-line-length=120'
+          version: 1.3.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - name: "📦 Install dependencies"
+        run: |
+          poetry lock --no-update
+          poetry install --no-interaction --no-root --all-extras
+      - name: "🔍 Run PEP8"
+        run: |
+          source $(poetry env info --path)/bin/activate
+          poe pep8
 
   # Pylint checking
   pylint:
@@ -75,7 +92,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: "Install poetry"
-        uses: snok/install-poetry@v1.3.3
+        uses: snok/install-poetry@v1
         with:
           version: 1.3.2
           virtualenvs-create: true
@@ -87,18 +104,40 @@ jobs:
           poetry install --no-interaction --no-root --all-extras
       - name: "🔍 Lint Code"
         run: |
-          poetry run pylint src -d C0103,C0114,E0213,E1101,W1203,W0511 $(git ls-files 'src/**/*.py')
-        # disable: invalid-name, missing-module-docstring, no-self-argument, no-member, logging-fstring-interpolation, to-dos
+          source $(poetry env info --path)/bin/activate
+          poe lint
 
   # isort
   isort:
     name: isort
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        python-version: [ "3.11" ]
     steps:
-      - uses: actions/checkout@v3
-      - uses: isort/isort-action@v1
+      - name: "☁️ Checkout Repository"
+        uses: actions/checkout@v3
+      - name: "🔧 Set up Python ${{ matrix.python-version }}"
+        uses: actions/setup-python@v3
         with:
-          requirements-files: "pyproject.toml"
+          python-version: ${{ matrix.python-version }}
+      - name: "Install poetry"
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.3.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - name: "📦 Install dependencies"
+        run: |
+          poetry lock --no-update
+          poetry install --no-interaction --no-root --all-extras
+      - name: "🔍 Run isort"
+        run: |
+          source $(poetry env info --path)/bin/activate
+          poe style-isort
 
   # Formatting
   black:
@@ -114,14 +153,17 @@ jobs:
           line-length: 120
           ignore_missing_imports: true
       - name: "Install poetry"
-        uses: snok/install-poetry@v1.3.3
+        uses: snok/install-poetry@v1
         with:
           version: 1.3.2
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
+      - name: "📦 Install dependencies"
+        run: |
+          poetry lock --no-update
+          poetry install --no-interaction --no-root --all-extras
       - name: "🔍 Run Black"
         run: |
-            poetry lock --no-update
-            poetry install --no-interaction --no-root
-            poetry run black --check --diff --verbose .
+            source $(poetry env info --path)/bin/activate
+            poe style-black

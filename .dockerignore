@@ -1,0 +1,6 @@
+*
+!quotes_recommender
+!pyproject.toml
+!poetry.lock
+!.gitignore
+!config

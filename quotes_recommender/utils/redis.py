@@ -4,7 +4,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from yarl import URL
 
-from src.core.constants import TXT_ENCODING
+from quotes_recommender.core.constants import TXT_ENCODING
 
 
 class RedisConfig(BaseSettings):
