@@ -11,7 +11,7 @@ class QdrantConfig(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix='QDRANT_', env_file_encoding=TXT_ENCODING)
     host: str = Field(min_length=0, default='0.0.0.0')
-    port: int = Field(default='6333')
+    port: int = Field(default=6333)
     api_key: Optional[str] = Field(default=None, description="API-Key of the database.")
     use_https: Optional[bool] = Field(default=False, description="Whether to use the Qdrant URL under https.")
 
