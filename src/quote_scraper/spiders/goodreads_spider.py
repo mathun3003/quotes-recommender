@@ -5,7 +5,7 @@ import scrapy
 from scrapy.exceptions import StopDownload
 from scrapy.http import Response
 
-from src.quote_scraper.items import QuoteItem, UserItem, QuoteData
+from src.quote_scraper.items import Quote, User, QuoteData
 
 class GoodreadsSpider(scrapy.Spider):
     """Scraper to extract data from goodreads.com/quotes."""
@@ -61,12 +61,12 @@ class GoodreadsSpider(scrapy.Spider):
         if match_user:
             user_id = match_user.group(1)
             user_name = match_user.group(2)
-            return UserItem(
+            return User(
                 user_id = int(user_id),
                 user_name = user_name
             )  
 
-    def parse_subpage(self, response: Response) -> Generator[QuoteItem, None, None]:
+    def parse_subpage(self, response: Response) -> Generator[Quote, None, None]:
         """
         Function to crawl subpages from a starting url
         :param response: web response from scrapy
@@ -84,15 +84,15 @@ class GoodreadsSpider(scrapy.Spider):
         # Accumulate liking users across all pages
         liking_users = response.meta.get('liking_users', []) + current_page_liking_users
         next_user_page = response.css(self.NEXT_SELECTOR).extract_first()
-        
+
         if "page=3" not in next_user_page: # Testing: Remove -> "page=3" not in...
             # Pass the accumulated liking users to the next page
             yield scrapy.Request(response.urljoin(next_user_page), callback = self.parse_subpage, 
                                  meta = {'liking_users': liking_users})
         else:
-            yield QuoteItem(
+            quote_result = Quote.model_construct(
                 id = int(re.search(self.QUOTE_ID_PATTERN, response.url).group(1)),
-                data = QuoteData(
+                data = QuoteData.model_construct(
                     author_name = response.css(self.QUOTE_AUTHOR_OR_TITLE).get().strip(),
                     author_page = response.urljoin(response.css(self.QUOTE_AVATAR).get()),
                     avatar_img = response.css(self.QUOTE_AVATAR_IMG).extract_first(),
@@ -103,4 +103,5 @@ class GoodreadsSpider(scrapy.Spider):
                     liking_users = liking_users,
                 )
              )
+            yield quote_result.model_dump()
         

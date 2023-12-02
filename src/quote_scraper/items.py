@@ -1,29 +1,26 @@
-from scrapy import Item, Field
-from yarl import URL
+from pydantic import BaseModel
+from typing import List
 
-
-class UserItem(Item):
+class User(BaseModel):
     """Item defining a scraped user profile."""
 
-    user_id: int = Field(description="Unique identifier of a user.")
-    user_name: str = Field(description="The name of the user.")
+    user_id: int
+    user_name: str
 
-
-class QuoteData(Item):
+class QuoteData(BaseModel):
     """Defining data model for quote (meta) data."""
 
-    author_name: str = Field(description="Name of the author")
-    author_page: URL = Field(description="Embedded link to the profile page of the quote author") 
-    avatar_img: URL = Field(description="Embedded link to avatar image.", serialize=True)
-    quote: str = Field(description="The actual quote.")
-    num_likes: int = Field(description="Number of likes the quote received.")
-    feed_url: URL = Field(description="The URL to the quote's feed.", serialize=True)
-    tags: list[str] = Field(description="List of tags the quote got assigned to.")
-    liking_users: list[UserItem] = Field(description="List of users that liked the quote.")
+    author_name: str
+    author_page: str
+    avatar_img: str
+    quote: str
+    num_likes: int 
+    feed_url: str 
+    tags: List[str]
+    liking_users: List[User]
 
-
-class QuoteItem(Item):
+class Quote(BaseModel):
     """Item defining a scraped quote."""
 
-    id: int = Field(description="The unique ID of the quote.")
-    data: QuoteData = Field(description="(Meta) data of the quote.")
+    id: int
+    data: QuoteData
