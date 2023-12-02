@@ -15,6 +15,7 @@ yarl = "^1.9.2"
 redis = "^5.0.1"
 jupyter = {version="^1.0.0", optional=true}
 qdrant-client = "^1.6.9"
+sentence-transformers = "^2.2.2"
 
 [tool.poetry.group.ci.dependencies]
 mypy = "^1.5.1"
