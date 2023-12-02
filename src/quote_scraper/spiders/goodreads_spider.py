@@ -84,6 +84,7 @@ class GoodreadsSpider(scrapy.Spider):
         # Accumulate liking users across all pages
         liking_users = response.meta.get('liking_users', []) + current_page_liking_users
         next_user_page = response.css(self.NEXT_SELECTOR).extract_first()
+        
         if "page=3" not in next_user_page: # Testing: Remove -> "page=3" not in...
             # Pass the accumulated liking users to the next page
             yield scrapy.Request(response.urljoin(next_user_page), callback = self.parse_subpage, 

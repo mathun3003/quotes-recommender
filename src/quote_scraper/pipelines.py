@@ -1,8 +1,7 @@
-# pylint: disable-all
-# type: ignore
-
+from quotes_recommender.vector_store.vector_store_singleton import QdrantVectorStoreSingleton
 import logging
-from itemadapter import ItemAdapter
+from sentence_transformers import SentenceTransformer
+
 logger = logging.getLogger(__name__)
 
 
@@ -10,11 +9,12 @@ class GoodreadsToRedisPipeline:
     """Goodreads Scrapy Pipeline"""
 
     def process_item(self, item, spider):
-        print("ITEM:")
-        print(item)
-        adapter = ItemAdapter(item)
+        model = SentenceTransformer('all-mpnet-base-v2')
+        embeddings = model.encode(item['data']['quote'])
+        self.vector_store.upsert_quotes([item], [embeddings])
         return item
 
     def open_spider(self, spider) -> None:
-        # TODO: establish document store connection
+        # Need for Vector Store
+        self.vector_store = QdrantVectorStoreSingleton().vector_store
         return
