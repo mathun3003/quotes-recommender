@@ -80,3 +80,13 @@ export const Bubble = styled('div')(({ position }) => ({
         placeSelf: 'end',
       }),
 }));
+
+export const ChatBubble = ({ text, author, tags, position }) => (
+  <ChatBubbleContainer position={position}>
+    <Bubble position={position}>
+      <p className="quote-text">{text}</p>
+      {author && <p className="quote-author">— {author}</p>}
+      {tags && <div className="quote-tags">Tags: {tags.join(', ')}</div>}
+    </Bubble>
+  </ChatBubbleContainer>
+);
