@@ -1,0 +1,41 @@
+version: '3.3'
+
+services:
+
+  qdrant:
+    container_name: vector-store
+    image: qdrant/qdrant:v1.6.1
+    restart: on-failure
+    ports:
+      - '0.0.0.0:8888:8000'
+      - '0.0.0.0:9999:6333'
+    volumes:
+      - cache:/data
+      - qdrant:/qdrant/storage:z
+      - ./config/:/qdrant/config/
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://0.0.0.0:9999/healthz" ]
+      interval: 200s
+      timeout: 200s
+      retries: 5
+
+  redis:
+    container_name: redis-stack
+    image: redis/redis-stack:7.2.0-v6
+    restart: on-failure
+    ports:
+      - '0.0.0.0:6379:6379'
+      - '0.0.0.0:8001:8001'
+    volumes:
+      - cache:/data
+      - redis-data:/var/lib/redis/data
+    healthcheck:
+      test: [ "CMD", "redis-cli","ping" ]
+
+
+volumes:
+  qdrant:
+  redis-data:
+  cache:
+    driver: local
+  config:
