@@ -5,7 +5,7 @@ from sentence_transformers import SentenceTransformer
 logger = logging.getLogger(__name__)
 
 
-class GoodreadsToRedisPipeline:
+class GoodreadsToQdrantPipeline:
     """Goodreads Scrapy Pipeline"""
 
     def process_item(self, item, spider):
