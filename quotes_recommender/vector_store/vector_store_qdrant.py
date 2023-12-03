@@ -99,9 +99,9 @@ class QdrantVectorStore:
         # construct points from inputs
         points = [
             PointStruct(
-                id=quote['id'], # type: ignore 
+                id=quote['id'], # type: ignore
                 vector=embedding,
-                payload=quote['data'], # type: ignore 
+                payload=quote['data'], # type: ignore
             )
             for quote, embedding in zip(quotes, embeddings)
         ]

@@ -32,7 +32,7 @@ class GoodreadsSpider(scrapy.Spider):
     NEXT_SELECTOR: Final[str] = 'a.next_page::attr(href)'
 
     # Regex
-    NUM_LIKES_REGEX: Final[str] = r'\b\d+\b' 
+    NUM_LIKES_REGEX: Final[str] = r'\b\d+\b'
     USER_LIKED_ID_PATTERN: Final[str] = r'/user\/show\/(\d+)-?([a-zA-Z0-9_-]+)'
     QUOTE_ID_PATTERN: Final[str] = r'/quotes/(\d+)-\w+'
 
@@ -45,7 +45,6 @@ class GoodreadsSpider(scrapy.Spider):
         """
         for feed in response.css(self.QUOTE_FEED).extract():
             yield scrapy.Request(response.urljoin(feed), callback = self.parse_subpage)
-        
         next_page = response.css(self.NEXT_SELECTOR).extract_first()
         if next_page:
             yield scrapy.Request(response.urljoin(next_page))
@@ -63,7 +62,8 @@ class GoodreadsSpider(scrapy.Spider):
             return User(
                 user_id = int(user_id),
                 user_name = user_name
-            )  
+            )
+        return None
 
     def parse_subpage(self, response: Response) -> Generator[dict, None, None]:
         """
@@ -77,15 +77,14 @@ class GoodreadsSpider(scrapy.Spider):
         if not num_likes_list[0].isdigit():
             raise ValueError('num_likes is not a digit. Failed to convert to int.')
         num_likes = int(num_likes_list[0])
-        current_page_liking_users = [self.extract_liked_user_id_name(liked_user_link) 
+        current_page_liking_users = [self.extract_liked_user_id_name(liked_user_link)
                                      for liked_user_link in response.css(self.USER_LIKED_LINK).extract()]
-
         # Accumulate liking users across all pages
         liking_users = response.meta.get('liking_users', []) + current_page_liking_users
         next_user_page = response.css(self.NEXT_SELECTOR).extract_first()
 
         if next_user_page: #"page=N" not in
-            yield scrapy.Request(response.urljoin(next_user_page), callback = self.parse_subpage, 
+            yield scrapy.Request(response.urljoin(next_user_page), callback = self.parse_subpage,
                                  meta = {'liking_users': liking_users})
         else:
             quote_id = re.search(self.QUOTE_ID_PATTERN, response.url)
