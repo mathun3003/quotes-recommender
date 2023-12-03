@@ -14,7 +14,7 @@ class GoodreadsSpider(scrapy.Spider):
     allowed_domains = ['goodreads.com']
     start_urls = ['https://www.goodreads.com/quotes']
 
-    # Filter masks for goodreads
+    # CSS filter masks
     QUOTE_SELECTOR: Final[str] = 'div.quote'
     QUOTE_AVATAR: Final[str] = 'a.leftAlignedImage.quoteAvatar::attr(href)'
     QUOTE_AVATAR_IMG: Final[str] = 'a.leftAlignedImage.quoteAvatar img::attr(src)'
@@ -33,10 +33,10 @@ class GoodreadsSpider(scrapy.Spider):
 
     # Regex
     NUM_LIKES_REGEX: Final[str] = r'\b\d+\b' 
-    USER_LIKED_ID_PATTERN = r'/user\/show\/(\d+)-?([a-zA-Z0-9_-]+)'
-    QUOTE_ID_PATTERN = r'/quotes/(\d+)-\w+'
+    USER_LIKED_ID_PATTERN: Final[str] = r'/user\/show\/(\d+)-?([a-zA-Z0-9_-]+)'
+    QUOTE_ID_PATTERN: Final[str] = r'/quotes/(\d+)-\w+'
 
-    def parse(self, response: Response, **kwargs: Any) -> Generator:
+    def parse(self, response: Response, **kwargs: Any) -> Generator[Quote, None, None]:
         """
         Function to select data from an object.
         :param response: web response from scrapy
@@ -46,7 +46,7 @@ class GoodreadsSpider(scrapy.Spider):
         for feed in response.css(self.QUOTE_FEED).extract():
             yield scrapy.Request(response.urljoin(feed), callback = self.parse_subpage)
         
-        # Get next pages
+        # Next pages
         next_page = response.css(self.NEXT_SELECTOR).extract_first()
         if next_page:
             yield scrapy.Request(response.urljoin(next_page))
@@ -85,7 +85,7 @@ class GoodreadsSpider(scrapy.Spider):
         liking_users = response.meta.get('liking_users', []) + current_page_liking_users
         next_user_page = response.css(self.NEXT_SELECTOR).extract_first()
 
-        if "page=3" not in next_user_page: # Testing: Remove -> "page=3" not in...
+        if next_user_page: #"page=N" not in...
             # Pass the accumulated liking users to the next page
             yield scrapy.Request(response.urljoin(next_user_page), callback = self.parse_subpage, 
                                  meta = {'liking_users': liking_users})

@@ -3,13 +3,12 @@ import logging
 from sentence_transformers import SentenceTransformer
 
 logger = logging.getLogger(__name__)
-
+model = SentenceTransformer('all-mpnet-base-v2')
 
 class GoodreadsToQdrantPipeline:
     """Goodreads Scrapy Pipeline"""
 
     def process_item(self, item, spider):
-        model = SentenceTransformer('all-mpnet-base-v2')
         embeddings = model.encode(item['data']['quote'])
         self.vector_store.upsert_quotes([item], [embeddings])
         return item
