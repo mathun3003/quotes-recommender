@@ -7,7 +7,7 @@ from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.http.models import Distance, PointStruct, UpdateStatus, VectorParams
 from requests import HTTPError
 
-from quotes_recommender.quote_scraper.items import QuoteItem
+from quotes_recommender.quote_scraper.items import Quote
 from quotes_recommender.utils.qdrant import QdrantConfig
 from quotes_recommender.vector_store.constants import (
     DEFAULT_EMBEDDING_SIZE,
@@ -83,7 +83,7 @@ class QdrantVectorStore:
 
     def upsert_quotes(
         self,
-        quotes: list[QuoteItem],
+        quotes: list[Quote],
         embeddings: Sequence[list[float]],
         collection_name: str = DEFAULT_QUOTE_COLLECTION,
         wait: bool = True,
@@ -99,9 +99,9 @@ class QdrantVectorStore:
         # construct points from inputs
         points = [
             PointStruct(
-                id=quote.get('id'),
+                id=quote['id'],
                 vector=embedding,
-                payload=quote.get('data'),
+                payload=quote['data'],
             )
             for quote, embedding in zip(quotes, embeddings)
         ]

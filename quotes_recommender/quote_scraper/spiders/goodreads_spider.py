@@ -46,7 +46,6 @@ class GoodreadsSpider(scrapy.Spider):
         for feed in response.css(self.QUOTE_FEED).extract():
             yield scrapy.Request(response.urljoin(feed), callback = self.parse_subpage)
         
-        # Subsequent pages
         next_page = response.css(self.NEXT_SELECTOR).extract_first()
         if next_page:
             yield scrapy.Request(response.urljoin(next_page))
@@ -66,7 +65,7 @@ class GoodreadsSpider(scrapy.Spider):
                 user_name = user_name
             )  
 
-    def parse_subpage(self, response: Response) -> Generator[Quote, None, None]:
+    def parse_subpage(self, response: Response) -> Generator[dict, None, None]:
         """
         Function to crawl subpages from a starting url
         :param response: web response from scrapy
@@ -86,12 +85,12 @@ class GoodreadsSpider(scrapy.Spider):
         next_user_page = response.css(self.NEXT_SELECTOR).extract_first()
 
         if next_user_page: #"page=N" not in
-            # Pass the accumulated liking users to the next page
             yield scrapy.Request(response.urljoin(next_user_page), callback = self.parse_subpage, 
                                  meta = {'liking_users': liking_users})
         else:
+            quote_id = re.search(self.QUOTE_ID_PATTERN, response.url)
             quote_result = Quote.model_construct(
-                id = int(re.search(self.QUOTE_ID_PATTERN, response.url).group(1)),
+                id = int(quote_id.group(1)) if quote_id else None,
                 data = QuoteData.model_construct(
                     author_name = response.css(self.QUOTE_AUTHOR_OR_TITLE).get().strip(),
                     author_page = response.urljoin(response.css(self.QUOTE_AVATAR).get()),
