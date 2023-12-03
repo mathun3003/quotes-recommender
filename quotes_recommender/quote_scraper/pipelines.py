@@ -14,6 +14,6 @@ class GoodreadsToQdrantPipeline:
         return item
 
     def open_spider(self, spider) -> None:
-        # Need for Vector Store
+        # Vector Store
         self.vector_store = QdrantVectorStoreSingleton().vector_store
         return

@@ -9,8 +9,8 @@
 
 BOT_NAME = "quote_scraper"
 
-SPIDER_MODULES = ["src.quote_scraper.spiders"]
-NEWSPIDER_MODULE = "src.quote_scraper.spiders"
+SPIDER_MODULES = ["quotes_recommender.quote_scraper.spiders"]
+NEWSPIDER_MODULE = "quotes_recommender.quote_scraper.spiders"
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 # USER_AGENT = "quote_scraper (+http://www.yourdomain.com)"
@@ -62,7 +62,7 @@ ROBOTSTXT_OBEY = True
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-   "src.quote_scraper.pipelines.GoodreadsToQdrantPipeline": 300, #low number indicates a high priority of the pipeline
+   "quotes_recommender.quote_scraper.pipelines.GoodreadsToQdrantPipeline": 300, #low number indicates a high priority of the pipeline
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

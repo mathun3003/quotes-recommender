@@ -5,7 +5,7 @@ import scrapy
 from scrapy.exceptions import StopDownload
 from scrapy.http import Response
 
-from src.quote_scraper.items import Quote, User, QuoteData
+from quotes_recommender.quote_scraper.items import Quote, User, QuoteData
 
 class GoodreadsSpider(scrapy.Spider):
     """Scraper to extract data from goodreads.com/quotes."""
@@ -46,7 +46,7 @@ class GoodreadsSpider(scrapy.Spider):
         for feed in response.css(self.QUOTE_FEED).extract():
             yield scrapy.Request(response.urljoin(feed), callback = self.parse_subpage)
         
-        # Next pages
+        # Subsequent pages
         next_page = response.css(self.NEXT_SELECTOR).extract_first()
         if next_page:
             yield scrapy.Request(response.urljoin(next_page))
@@ -85,7 +85,7 @@ class GoodreadsSpider(scrapy.Spider):
         liking_users = response.meta.get('liking_users', []) + current_page_liking_users
         next_user_page = response.css(self.NEXT_SELECTOR).extract_first()
 
-        if next_user_page: #"page=N" not in...
+        if next_user_page: #"page=N" not in
             # Pass the accumulated liking users to the next page
             yield scrapy.Request(response.urljoin(next_user_page), callback = self.parse_subpage, 
                                  meta = {'liking_users': liking_users})
