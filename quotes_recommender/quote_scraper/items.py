@@ -1,10 +1,12 @@
 from pydantic import BaseModel, Field
 
+
 class User(BaseModel):
     """Item defining a scraped user profile."""
 
     user_id: int = Field(description="Unique identifier of a user.")
     user_name: str = Field(description="The name of the user.")
+
 
 class QuoteData(BaseModel):
     """Defining data model for quote (meta) data."""
@@ -17,6 +19,7 @@ class QuoteData(BaseModel):
     feed_url: str = Field(description="The URL to the quote's feed.")
     tags: list[str] = Field(description="List of tags the quote got assigned to.")
     liking_users: list[User] = Field(description="List of users that liked the quote.")
+
 
 class Quote(BaseModel):
     """Item defining a scraped quote."""
