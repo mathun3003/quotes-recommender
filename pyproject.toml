@@ -15,6 +15,7 @@ yarl = "^1.9.2"
 redis = "^5.0.1"
 jupyter = {version="^1.0.0", optional=true}
 qdrant-client = "^1.6.9"
+sentence-transformers = "^2.2.2"
 
 [tool.poetry.group.ci.dependencies]
 mypy = "^1.5.1"
@@ -47,6 +48,10 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
         {cmd = "docker compose up -d qdrant"},
         {cmd = "poetry run dvc pull"},
     ]
+
+    [tool.poe.tasks.scrape-goodreads]
+    help = "Run the goodreads-spider locally"
+    cmd = "scrapy crawl goodreads-spider"
 
     [tool.poe.tasks.typing]
     help = "Run MyPy checker on the code base"
