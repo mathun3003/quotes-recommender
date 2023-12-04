@@ -7,7 +7,7 @@ from quotes_recommender.vector_store.vector_store_singleton import (
 )
 
 logger = logging.getLogger(__name__)
-model = SentenceTransformer('all-mpnet-base-v2')
+model = SentenceTransformer('all-mpnet-base-v2')  # TODO Replace by its class
 
 
 class GoodreadsToQdrantPipeline:

@@ -96,8 +96,9 @@ class QdrantVectorStore:
         :param wait: Whether to wait for committed changes.
         :return: Status of the upsert request.
         """
-        # construct points from inputs
+        # Construct points from inputs
         points = [
+            # TODO check for failure regarding pydantic attribute assignment
             PointStruct(
                 id=quote['id'],  # type: ignore
                 vector=embedding,

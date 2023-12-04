@@ -8,7 +8,7 @@ class User(BaseModel):
     user_name: str = Field(description="The name of the user.")
 
 
-class QuoteData(BaseModel):
+class QuoteData(BaseModel):  # TODO Split up the class into dedicated core and other
     """Defining data model for quote (meta) data."""
 
     author_name: str = Field(description="Name of the author")
