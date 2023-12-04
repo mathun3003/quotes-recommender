@@ -93,8 +93,8 @@ class GoodreadsSpider(scrapy.Spider):
             quote_result = Quote.model_construct(
                 id=int(quote_id.group(1)) if quote_id else None,
                 data=QuoteData.model_construct(
-                    author_name=response.css(self.QUOTE_AUTHOR_OR_TITLE).get().strip(),
-                    author_page=response.urljoin(response.css(self.QUOTE_AVATAR).get()),
+                    author=response.css(self.QUOTE_AUTHOR_OR_TITLE).get().strip(),
+                    author_profile=response.urljoin(response.css(self.QUOTE_AVATAR).get()),
                     avatar_img=response.css(self.QUOTE_AVATAR_IMG).extract_first(),
                     quote=response.css(self.QUOTE_TEXT).get().strip().lstrip('“').rstrip('”'),
                     num_likes=num_likes,

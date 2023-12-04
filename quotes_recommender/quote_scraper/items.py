@@ -11,8 +11,8 @@ class User(BaseModel):
 class QuoteData(BaseModel):  # TODO Split up the class into dedicated core and other
     """Defining data model for quote (meta) data."""
 
-    author_name: str = Field(description="Name of the author")
-    author_page: str = Field(description="Information page of the quote author")
+    author: str = Field(description="Name of the quote author")
+    author_profile: str = Field(description="Information page of the quote author")
     avatar_img: str = Field(description="Embedded link to avatar image.")
     quote: str = Field(description="The actual quote.")
     num_likes: int = Field(description="Number of likes the quote received.")
