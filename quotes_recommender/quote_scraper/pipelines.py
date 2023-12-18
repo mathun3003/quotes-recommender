@@ -38,3 +38,26 @@ class GoodreadsToQdrantPipeline:
         :param The Scrapy spider instance.
         """
         # Optionally, add cleanup code here
+
+
+class AzquotesToQdrantPipeline:
+    """Azquotes Scrapy Pipeline"""
+
+    def __init__(self):
+        """Initialize the pipeline."""
+        self.vector_store = None
+
+    def process_item(self, item, spider):  # pylint: disable=unused-argument
+        """Process a Azquotes item and upsert the quote into the Qdrant vector store.
+        :param item (dict): An Azquote item containing quote data.
+        :param spider: The Scrapy spider instance.
+        """
+        embeddings = model.encode(item['data']['quote'])
+        self.vector_store.upsert_quotes([item], [embeddings])
+        return item
+
+    def open_spider(self, spider) -> None:  # pylint: disable=unused-argument
+        """Open the spider and initialize the Qdrant vector store.
+        :param spider: The Scrapy spider instance.
+        """
+        self.vector_store = QdrantVectorStoreSingleton().vector_store
