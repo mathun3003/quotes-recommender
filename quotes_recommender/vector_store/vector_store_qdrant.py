@@ -1,13 +1,16 @@
 import logging
-from typing import Any, Sequence
+from typing import Sequence, Optional, Any
 
+import numpy as np
+import numpy.typing as npt
 import requests
 from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
-from qdrant_client.http.models import Distance, PointStruct, UpdateStatus, VectorParams
+from qdrant_client.http.models import Distance, PointStruct, UpdateStatus, VectorParams, ScoredPoint, Filter, \
+    FieldCondition, MatchAny, PayloadSelectorInclude, Record
 from requests import HTTPError
 
-from quotes_recommender.quote_scraper.items import Quote
+from quotes_recommender.quote_scraper.items import QuoteItem, ExtendedQuoteData
 from quotes_recommender.utils.qdrant import QdrantConfig
 from quotes_recommender.vector_store.constants import (
     DEFAULT_EMBEDDING_SIZE,
@@ -22,7 +25,7 @@ class QdrantVectorStore:
     """Redis document store class for inserting, querying, and searching tasks"""
 
     def __init__(
-        self, qdrant_config: QdrantConfig, on_disk: bool = True, timeout: float = 60.0, ping: bool = True
+            self, qdrant_config: QdrantConfig, on_disk: bool = True, timeout: float = 60.0, ping: bool = True
     ) -> None:
         """
         Init Qdrant vector store instance.
@@ -68,25 +71,25 @@ class QdrantVectorStore:
         # TODO: create HNSW index (?)
         # create default collection
         if not self.client.create_collection(
-            collection_name=DEFAULT_QUOTE_COLLECTION,
-            on_disk_payload=self.on_disk_payload,
-            vectors_config=VectorParams(
-                size=DEFAULT_EMBEDDING_SIZE, distance=Distance.COSINE, on_disk=self.on_disk_payload
-            ),
+                collection_name=DEFAULT_QUOTE_COLLECTION,
+                on_disk_payload=self.on_disk_payload,
+                vectors_config=VectorParams(
+                    size=DEFAULT_EMBEDDING_SIZE, distance=Distance.COSINE, on_disk=self.on_disk_payload
+                ),
         ):
             raise ConnectionError(f'Could not create {DEFAULT_QUOTE_COLLECTION} collection.')
         # create default index
         if not self.client.create_payload_index(
-            collection_name=DEFAULT_QUOTE_COLLECTION, field_name=DEFAULT_PAYLOAD_INDEX, field_type='keyword'
+                collection_name=DEFAULT_QUOTE_COLLECTION, field_name=DEFAULT_PAYLOAD_INDEX, field_type='keyword'
         ):
             raise ConnectionError(f'Could not create {DEFAULT_PAYLOAD_INDEX} index on {DEFAULT_QUOTE_COLLECTION}.')
 
     def upsert_quotes(
-        self,
-        quotes: list[Quote],
-        embeddings: Sequence[list[float]],
-        collection_name: str = DEFAULT_QUOTE_COLLECTION,
-        wait: bool = True,
+            self,
+            quotes: list[QuoteItem],
+            embeddings: Sequence[list[float]],
+            collection_name: str = DEFAULT_QUOTE_COLLECTION,
+            wait: bool = True,
     ) -> UpdateStatus:
         """
         Method to upsert quotes to the vector store.
@@ -114,6 +117,69 @@ class QdrantVectorStore:
         # return status
         return response.status
 
-    def get_content_based_recommendation(self) -> Any:
-        """Get content-based recommendations"""
-        # TODO
+    def get_content_based_recommendation(
+            self,
+            query_embedding: npt.NDArray[np.float64],
+            tags: Optional[list[str]] = None,
+            limit: int = 10,
+            score_threshold: Optional[float] = None,
+            collection: str = DEFAULT_QUOTE_COLLECTION,
+    ) -> list[Optional[ScoredPoint]]:
+        """
+        Get content-based recommendations for the specified query.
+        :param query_embedding: The encoded user search string.
+        :param tags: Tags that should be used for searching. Only those quotes are returned that are assigned to one of
+        the specified tags (logical OR).
+        :param limit: Max number of results that should be returned.
+        :param score_threshold: Define a minimal score threshold for the result. If defined, less similar results will
+        not be returned.
+        :param collection: Collection used for the search.
+        :return: Payload results of the matching quotes.
+
+        Reference: https://qdrant.github.io/qdrant/redoc/index.html#tag/points/operation/search_points
+        """
+        # build the search query
+        hits = self.client.search(
+            collection_name=collection,
+            query_vector=query_embedding,
+            # fmt: off
+            query_filter=Filter(
+                # a quote must contain any of the specified tags to be considered a match
+                must=[FieldCondition(key='tags', match=MatchAny(any=tags))]  # TODO: get from pydantic model
+            ) if tags else None,
+            # fmt: on
+            limit=limit,
+            score_threshold=score_threshold,
+            # only select relevant payload fields
+            with_payload=PayloadSelectorInclude(include=list(ExtendedQuoteData.model_fields.keys())),
+        )
+        # return payload results
+        return hits
+
+    def scroll_points(
+            self,
+            tags: Optional[list[str]] = None,
+            offset: Optional[int] = None,
+            limit: int = 20,
+            collection: str = DEFAULT_QUOTE_COLLECTION
+    ) -> tuple[list[Record], Optional[int | str | Any]]:
+        """
+
+        :param tags:
+        :param offset:
+        :param limit:
+        :param collection:
+        :return:
+        """
+        points = self.client.scroll(
+            collection_name=collection,
+            scroll_filter=Filter(
+                must=[FieldCondition(key='tags', match=MatchAny(any=tags))]
+            ) if tags else None,
+            limit=limit,
+            offset=offset,
+            with_vectors=False,
+            with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text'])  # TODO: get from pydantic model
+        )
+        # return points and next_page_offset
+        return points[0], points[1]

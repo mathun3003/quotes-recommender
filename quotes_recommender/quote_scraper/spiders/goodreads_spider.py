@@ -5,15 +5,16 @@ import scrapy
 from scrapy.exceptions import StopDownload
 from scrapy.http import Response
 
-from quotes_recommender.quote_scraper.items import Quote, QuoteData, User
+from quotes_recommender.core.constants import GOODREADS_QUOTES_URL
+from quotes_recommender.quote_scraper.items import QuoteItem, QuoteData, UserItem
 
 
 class GoodreadsSpider(scrapy.Spider):
     """Scraper to extract data from goodreads.com/quotes."""
 
     name = 'goodreads-spider'
-    allowed_domains = ['goodreads.com']
-    start_urls = ['https://www.goodreads.com/quotes']
+    allowed_domains = [GOODREADS_QUOTES_URL.raw_host]
+    start_urls = [GOODREADS_QUOTES_URL]
 
     # CSS filter masks
     QUOTE_SELECTOR: Final[str] = 'div.quote'
@@ -37,7 +38,7 @@ class GoodreadsSpider(scrapy.Spider):
     USER_LIKED_ID_PATTERN: Final[str] = r'/user\/show\/(\d+)-?([a-zA-Z0-9_-]+)'
     QUOTE_ID_PATTERN: Final[str] = r'/quotes/(\d+)-\w+'
 
-    def parse(self, response: Response, **kwargs: Any) -> Generator[Quote, None, None]:
+    def parse(self, response: Response, **kwargs: Any) -> Generator[QuoteItem, None, None]:
         """
         Function to select data from an object.
         :param response: web response from scrapy
@@ -61,7 +62,7 @@ class GoodreadsSpider(scrapy.Spider):
         if match_user:
             user_id = match_user.group(1)
             user_name = match_user.group(2)
-            return User(user_id=int(user_id), user_name=user_name)
+            return UserItem(user_id=int(user_id), user_name=user_name)
         return None
 
     def parse_subpage(self, response: Response) -> Generator[dict, None, None]:
@@ -90,7 +91,7 @@ class GoodreadsSpider(scrapy.Spider):
             )
         else:
             quote_id = re.search(self.QUOTE_ID_PATTERN, response.url)
-            quote_result = Quote.model_construct(
+            quote_result = QuoteItem.model_construct(
                 id=int(quote_id.group(1)) if quote_id else None,
                 data=QuoteData.model_construct(
                     author=response.css(self.QUOTE_AUTHOR_OR_TITLE).get().strip(),

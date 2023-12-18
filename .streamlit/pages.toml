@@ -1,0 +1,19 @@
+[[pages]]
+path = "quotes_recommender/app.py"
+name = "Home"
+icon = "🏠"
+
+[[pages]]
+path = "quotes_recommender/ui/preferences.py"
+name = "Preferences"
+icon = "♥️"
+
+[[pages]]
+path = "quotes_recommender/ui/searching.py"
+name = "Search for Quotes"
+icon = "🔍"
+
+[[pages]]
+path = "quotes_recommender/ui/recommendations.py"
+name = "See Recommendation"
+icon = "🤖"

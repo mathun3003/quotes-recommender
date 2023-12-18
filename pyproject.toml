@@ -16,6 +16,10 @@ redis = "^5.0.1"
 jupyter = {version="^1.0.0", optional=true}
 qdrant-client = "^1.6.9"
 sentence-transformers = "^2.2.2"
+streamlit = "^1.29.0"
+st-pages = "^0.4.5"
+streamlit-authenticator = "^0.2.3"
+watchdog = "^3.0.0"
 
 [tool.poetry.group.ci.dependencies]
 mypy = "^1.5.1"
