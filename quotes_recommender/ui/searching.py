@@ -21,7 +21,7 @@ st.divider()
 
 # specify user inputs
 query = st.text_input(label="User query", placeholder="What are you looking for?")
-filters = st.multiselect(label="Filters", options=extract_tag_filters(), placeholder="Filter by tags.")
+tags = st.multiselect(label="Filters", options=extract_tag_filters(), placeholder="Filter by tags.")
 submitted = st.button(label="Search for Quotes", use_container_width=True, type="primary", on_click=click_search_button)
 st.divider()
 
@@ -32,7 +32,7 @@ if submitted:
     with st.spinner('Searching for quotes...'):
         quotes = vector_store.get_content_based_recommendation(
             query_embedding=sentence_bert.encode(query, show_progress_bar=False),
-            tags=filters  # FIXME: look for correct filters
+            tags=[tag.lower() for tag in tags]
         )
 
     if not quotes:

@@ -49,12 +49,14 @@ class QdrantVectorStore:
 
         # test connection
         if ping:
-            # use workaround instead of service API as it contains a bug
-            response = requests.get(
-                f'{qdrant_config.https_url if qdrant_config.use_https else qdrant_config.http_url}/healthz', timeout=60
-            )
-            if not response.ok:
-                raise ConnectionError("Cannot connect to Qdrant. Is the database running?")
+            try:
+                # use workaround instead of service API as it contains a bug
+                response = requests.get(
+                    f'{qdrant_config.https_url if qdrant_config.use_https else qdrant_config.http_url}/healthz', timeout=60
+                )
+            except ConnectionError as exc:
+                logger.error("Cannot connect to Qdrant. Is the database running?")
+                raise exc
             logger.info('Connected to Qdrant.')
 
         try:
@@ -164,7 +166,7 @@ class QdrantVectorStore:
             collection: str = DEFAULT_QUOTE_COLLECTION
     ) -> tuple[list[Record], Optional[int | str | Any]]:
         """
-
+        # TODO
         :param tags:
         :param offset:
         :param limit:

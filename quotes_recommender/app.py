@@ -3,9 +3,11 @@ import streamlit_authenticator as stauth
 from st_pages import show_pages_from_config
 from streamlit_authenticator.exceptions import RegisterError
 
+from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
 from quotes_recommender.vector_store.vector_store_singleton import QdrantVectorStoreSingleton
 
 vector_store = QdrantVectorStoreSingleton().vector_store
+user_store = RedisUserStoreSingleton().user_store
 
 
 # set page config
@@ -24,18 +26,11 @@ st.write('A Quote Recommender for Finding the Right Words to Express Your Though
 
 # configure authenticator
 authenticator = stauth.Authenticate(
-    # TODO: fetch credentials from DB
     credentials={
-        'usernames': {
-            'jsmith': {
-                'email': 'test@web.de',
-                'name': 'John Doe',
-                'password': "$2b$12$TLdmvouH13w5dGD3i44WSOt5pVihi0lOUSaDszb.fIJ905TTz1WXi"  # 123
-            }
-        }
+        'usernames': user_store.get_user_credentials()
     },
-    cookie_name='sage_snippet_cookie',
-    key='bla'
+    cookie_name='sage_snippet',
+    key='authenticator-main-app'
 )
 
 login_tab, register_tab, forgot_password_tab = st.tabs(["Sign In", "Sign Up", "Reset Password"])
@@ -51,6 +46,7 @@ with login_tab:
         authenticator.logout('Logout', 'sidebar', key='logout_sidebar')
         # write welcome message
         st.write(f"## Welcome {st.session_state['name']} 👋")
+        # TODO: display (dis-)likes (if any) of logged in user
     # if login was not successful
     elif st.session_state['authentication_status'] is False:
         st.error('❌ Username/password is incorrect')
@@ -60,10 +56,20 @@ with login_tab:
 
 # Sign Up tab
 with register_tab:
-    # TODO: implement
     try:
         if authenticator.register_user("Register", preauthorization=False):
+            # get newly registered user from authenticator
+            new_usernames: set[str] = \
+                set(authenticator.credentials['usernames'].keys()) ^ set(user_store.get_user_credentials().keys())
+            # register any new user
+            for new_username in new_usernames:
+                # get credentials
+                new_credentials = authenticator.credentials['usernames'][new_username]
+                # store in redis
+                if not user_store.register_user(username=new_username, credentials=new_credentials):
+                    st.error("Oops, you broke the internet... Please try again later.")
             st.success("You successfully registered for SageSnippets! 🎉")
+            st.write("You can now log in via the 'Sign In' tab.")
     except RegisterError as register_error:
         st.error(register_error.message)
 

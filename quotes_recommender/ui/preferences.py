@@ -30,7 +30,7 @@ if st.session_state['authentication_status']:
     st.sidebar.write(f"Logged in as {st.session_state['name']}.")
 
     st.header('Your Preferences')
-    st.subheader('Specify your preferences')
+    st.subheader('Specify your interests')
     st.write("""
     In order to provide you the best possible recommendations, we need some information about your preferences and 
     interests. Please consider the following quotes and specify at least five quotes you like and not like.
@@ -51,7 +51,7 @@ if st.session_state['authentication_status']:
                 if (img_link := quote.payload.get('avatar_img')) is not None:
                     st.image(quote.payload.get('avatar_img'), use_column_width=True)
             left_btn_col, right_btn_col = st.columns(spec=[0.2, 0.8])
-
+            # TODO: replace by stateful button
             with left_btn_col:
                 like_btn = st.checkbox(
                     label=":thumbsup:",
