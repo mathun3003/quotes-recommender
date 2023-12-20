@@ -53,6 +53,18 @@ class AzquotesToQdrantPipeline:
         :param spider: The Scrapy spider instance.
         """
         embeddings = model.encode(item['data']['quote'])
+        # logger.info("#############################")
+        # logger.info(embeddings)        
+        # logger.info("#############################")
+
+        dups = self.vector_store.get_similarity_scores(embeddings)
+        if dups:
+            logger.info("###############################")
+            logger.info("####### Duplicate found #######")
+            logger.info(f"New: {item['data']['quote']}")
+            logger.info(f"Exists: {dups}")
+            logger.info("###############################")
+
         self.vector_store.upsert_quotes([item], [embeddings])
         return item
 
