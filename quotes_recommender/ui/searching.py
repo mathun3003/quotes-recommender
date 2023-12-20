@@ -1,6 +1,7 @@
 import streamlit as st
 
-from quotes_recommender.utils.streamlit import load_sentence_bert, click_search_button, extract_tag_filters
+from quotes_recommender.utils.streamlit import load_sentence_bert, click_search_button, extract_tag_filters, \
+    display_quotes
 from quotes_recommender.vector_store.vector_store_singleton import QdrantVectorStoreSingleton
 
 vector_store = QdrantVectorStoreSingleton().vector_store
@@ -37,17 +38,6 @@ if submitted:
 
     if not quotes:
         st.info("No quotes found. Please search for some other quotes or change filters.")
-
-    for quote in quotes:
-        with st.container(border=True):
-            left_quote_col, right_quote_col = st.columns(spec=[0.7, 0.3])  # FIXME: avoid duplicate code
-            with left_quote_col:
-                st.markdown(f"""
-                            *„{quote.payload.get('text')}“*  
-                            **― {quote.payload.get('author')}**""")
-                st.caption(f"Tags: {', '.join([tag.capitalize() for tag in quote.payload.get('tags')])}")
-            with right_quote_col:
-                if (img_link := quote.payload.get('avatar_img')) is not None:
-                    st.image(quote.payload.get('avatar_img'), use_column_width=True)
-            left_btn_col, right_btn_col = st.columns(spec=[0.2, 0.8])
+    # display quotes
+    display_quotes(quotes)
 

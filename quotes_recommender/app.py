@@ -30,7 +30,7 @@ authenticator = stauth.Authenticate(
         'usernames': user_store.get_user_credentials()
     },
     cookie_name='sage_snippet',
-    key='authenticator-main-app'
+    key='authenticator-main-subpage'
 )
 
 login_tab, register_tab, forgot_password_tab = st.tabs(["Sign In", "Sign Up", "Reset Password"])

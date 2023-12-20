@@ -15,5 +15,5 @@ icon = "🔍"
 
 [[pages]]
 path = "quotes_recommender/ui/recommendations.py"
-name = "See Recommendation"
+name = "See Recommendations"
 icon = "🤖"
