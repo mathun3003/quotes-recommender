@@ -1,6 +1,7 @@
 import streamlit as st
 import streamlit_authenticator as stauth
 
+from quotes_recommender.core.models import UserPreference
 from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
 from quotes_recommender.utils.streamlit import switch_opposite_button, display_quotes, extract_tag_filters
 from quotes_recommender.vector_store.vector_store_singleton import QdrantVectorStoreSingleton
@@ -38,6 +39,11 @@ if st.session_state['authentication_status']:
     quotes, next_page_offset = vector_store.scroll_points(limit=10, tags=[tag.lower() for tag in tags])
     # display quotes with buttons
     st.divider()
-    display_quotes(quotes, display_buttons=True)
+    # display quotes and collect user preferences
+    preferences = display_quotes(quotes, display_buttons=True)
+    # write preferences to redis
+    if preferences:
+        if not user_store.set_user_preferences(username=st.session_state['username'], preferences=preferences):
+            st.toast('Failed to save preferences. Please try again later.', icon='🕠')
 else:
     st.info('🔔 Please login/register to specify preferences.')

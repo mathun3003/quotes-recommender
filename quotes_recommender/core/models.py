@@ -17,3 +17,10 @@ class QuoteData(ForbidExtraModel):
     text: str = Field(description="The text of the quote.")
     author: str = Field(description="The author of the quote.")
     tags: list[str] = Field(description="The list of tags assigned to the quote.")
+
+
+class UserPreference(ForbidExtraModel):
+    """Class representing a user preference regarding a quote."""
+
+    id: int = Field(description="The ID under which the quote is stored in the database.", ge=1)
+    like: bool = Field(description="Whether the user preference was a like.")

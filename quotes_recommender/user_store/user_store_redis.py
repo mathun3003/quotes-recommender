@@ -4,6 +4,7 @@ from typing import Optional, Any, Mapping
 import redis
 
 from quotes_recommender.core.constants import TXT_ENCODING
+from quotes_recommender.core.models import UserPreference
 from quotes_recommender.user_store.constants import DEFAULT_BATCH_SIZE
 from quotes_recommender.utils.redis import RedisConfig
 
@@ -81,15 +82,53 @@ class RedisUserStore:
         :param credentials: The credentials of the new user.
         :return: True if all fields were added, else False.
         """
-        added_fields = self._client.hset(name=username, mapping=credentials)
+        hash_key: str = f"user:{username}:credentials"
+        added_fields = self._client.hset(name=hash_key, mapping=credentials)
         return True if added_fields == len(credentials) else False
 
-    def get_user_preferences(self):
-        # TODO
-        pass
+    def get_user_preferences(self, username: str) -> list[UserPreference]:
+        """
+        Returns all preferences for a given user.
+        :param username: The username of the logged-in user.
+        :return: The list of user preferences.
+        """
+        base_hash_key: str = f"user:{username}:preferences"
+        like_hash_key: str = f"{base_hash_key}:like"
+        dislike_hash_key: str = f"{base_hash_key}:dislike"
+        # TODO: convert to pipeline operation: https://stackoverflow.com/questions/19079441/get-multiple-sets
+        likes = self._client.smembers(name=like_hash_key)
+        dislikes = self._client.smembers(name=dislike_hash_key)
+        return zip(
+            [UserPreference(id=member, like=True) for member in likes],
+            [UserPreference(id=member, like=False) for member in dislikes]
+        )
 
-    def set_user_preferences(self):
-        # TODO
-        pass
-
-
+    def set_user_preferences(self, username: str, preferences: list[UserPreference]) -> bool:
+        """
+        Sets the preferences of the logged-in user.
+        :param username: The username of the logged-in user.
+        :param preferences: The list of user preferences.
+        :return: Whether operation was successful
+        """
+        # split user preferences up into likes/dislikes
+        likes, dislikes = [], []
+        for preference in preferences:
+            if preference.like:
+                likes.append(preference.id)
+            elif not preference.like:
+                dislikes.append(preference.id)
+            else:
+                raise ValueError(
+                    f"User preference with id {preference.id} has wrong value for like attr: {preference.like}"
+                )
+        # build base hash key
+        # TODO: create constants for hash keys
+        base_hash_key: str = f"user:{username}:preferences"
+        like_hash_key: str = f"{base_hash_key}:like"
+        dislike_hash_key: str = f"{base_hash_key}:dislike"
+        # TODO: convert to pipeline operation: https://stackoverflow.com/questions/19079441/get-multiple-sets
+        num_likes_added: int = self._client.sadd(like_hash_key, *likes)
+        num_dislikes_added: int = self._client.sadd(dislike_hash_key, *dislikes)
+        # TODO: remove IDs from sets that are not part of the input list
+        # TODO: rename function to 'sync_user_preferences'
+        return True if ((num_likes_added + num_dislikes_added) == len(preferences)) else False
