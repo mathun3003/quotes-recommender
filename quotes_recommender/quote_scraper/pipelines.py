@@ -23,7 +23,19 @@ class QuotesToQdrantPipeline:
         :param spider: The Scrapy spider instance.
         """
         embeddings = model.encode(item['data']['quote'])
-        self.vector_store.upsert_quotes([item], [embeddings])
+        dups = self.vector_store.get_similarity_scores(embeddings)
+
+        if dups:
+            logger.info("###############################")
+            logger.warning("####### Duplicate found #######")
+            logger.info(f"New: {item['data']['quote']}")
+            logger.info(f"Exists: {dups}")
+            logger.info("###############################")
+        else:
+            logger.info("###############################")
+            logger.info("NO Dups found")
+
+        #self.vector_store.upsert_quotes([item], [embeddings])
         return item
 
     def open_spider(self, spider) -> None:  # pylint: disable=unused-argument
