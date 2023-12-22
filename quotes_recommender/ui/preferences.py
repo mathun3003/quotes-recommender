@@ -35,8 +35,9 @@ if st.session_state['authentication_status']:
     st.divider()
     # select by tags
     tags = st.multiselect(label="Filters", options=extract_tag_filters(), placeholder="Filter by tags.")
-    # get quotes from vector store
-    quotes, next_page_offset = vector_store.scroll_points(limit=10, tags=[tag.lower() for tag in tags])
+    with st.spinner('Loading quotes...'):
+        # get quotes from vector store
+        quotes, next_page_offset = vector_store.scroll_points(limit=10, tags=[tag.lower() for tag in tags])
     # display quotes with buttons
     st.divider()
     # display quotes and collect user preferences

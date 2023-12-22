@@ -6,6 +6,7 @@ import redis
 from quotes_recommender.core.constants import TXT_ENCODING
 from quotes_recommender.core.models import UserPreference
 from quotes_recommender.user_store.constants import DEFAULT_BATCH_SIZE
+from quotes_recommender.user_store.models import PreferenceKey
 from quotes_recommender.utils.redis import RedisConfig
 
 logger = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ class RedisUserStore:
         :param ping: ping connection
         """
         # raise error of no host or port was provided
-        if redis_config.redis_url.host is None or redis_config.port is None:
+        if redis_config.host is None or redis_config.port is None:
             raise ConnectionError("No Redis host or port specified.")
         # get redis instance
         self._client = redis.Redis(
@@ -86,21 +87,19 @@ class RedisUserStore:
         added_fields = self._client.hset(name=hash_key, mapping=credentials)
         return True if added_fields == len(credentials) else False
 
-    def get_user_preferences(self, username: str) -> list[UserPreference]:
+    def get_user_preferences(self, username: str) -> Optional[list[UserPreference]]:
         """
         Returns all preferences for a given user.
         :param username: The username of the logged-in user.
         :return: The list of user preferences.
         """
-        base_hash_key: str = f"user:{username}:preferences"
-        like_hash_key: str = f"{base_hash_key}:like"
-        dislike_hash_key: str = f"{base_hash_key}:dislike"
-        # TODO: convert to pipeline operation: https://stackoverflow.com/questions/19079441/get-multiple-sets
-        likes = self._client.smembers(name=like_hash_key)
-        dislikes = self._client.smembers(name=dislike_hash_key)
-        return zip(
-            [UserPreference(id=member, like=True) for member in likes],
-            [UserPreference(id=member, like=False) for member in dislikes]
+        # create hash keys from username
+        hash_keys = PreferenceKey(username=username)
+        likes = self._client.smembers(name=hash_keys.like_key)
+        dislikes = self._client.smembers(name=hash_keys.dislike_key)
+        return (
+                [UserPreference(id=member, like=True) for member in likes] +
+                [UserPreference(id=member, like=False) for member in dislikes]
         )
 
     def set_user_preferences(self, username: str, preferences: list[UserPreference]) -> bool:
@@ -121,14 +120,28 @@ class RedisUserStore:
                 raise ValueError(
                     f"User preference with id {preference.id} has wrong value for like attr: {preference.like}"
                 )
-        # build base hash key
-        # TODO: create constants for hash keys
-        base_hash_key: str = f"user:{username}:preferences"
-        like_hash_key: str = f"{base_hash_key}:like"
-        dislike_hash_key: str = f"{base_hash_key}:dislike"
-        # TODO: convert to pipeline operation: https://stackoverflow.com/questions/19079441/get-multiple-sets
-        num_likes_added: int = self._client.sadd(like_hash_key, *likes)
-        num_dislikes_added: int = self._client.sadd(dislike_hash_key, *dislikes)
-        # TODO: remove IDs from sets that are not part of the input list
-        # TODO: rename function to 'sync_user_preferences'
-        return True if ((num_likes_added + num_dislikes_added) == len(preferences)) else False
+        # build hash keys
+        hash_keys = PreferenceKey(username=username)
+        # create pipeline
+        with self._client.pipeline() as pipe:
+            # TODO: rename function to 'sync_user_preferences'
+            # TODO: remove IDs from sets that are not part of the input list
+            # add commands
+            if likes:
+                pipe.sadd(hash_keys.like_key, *likes)
+            if dislikes:
+                pipe.sadd(hash_keys.dislike_key, *dislikes)
+            # execute pipeline and return operation results. Return False if no members were set
+            return True if sum(pipe.execute()) != 0 else False
+
+    def delete_user_preference(self, hash_key: str, member: int) -> Optional[bool]:
+        """
+        Removes a member from a set if it is part of it.
+        :param hash_key: The key of the set.
+        :param member: The identifier of the member,
+        :return: Whether the operation was successful.
+        """
+        # check if the member exists in the given set
+        if self._client.sismember(hash_key, member):
+            result = self._client.srem(hash_key, member)
+            return True if result != 0 else False

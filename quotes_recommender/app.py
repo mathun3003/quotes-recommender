@@ -46,7 +46,13 @@ with login_tab:
         authenticator.logout('Logout', 'sidebar', key='logout_sidebar')
         # write welcome message
         st.write(f"## Welcome {st.session_state['name']} 👋")
-        # TODO: display (dis-)likes (if any) of logged in user
+        with st.spinner('Loading your preferences'):
+            # display (dis-)likes (if any) of logged-in user
+            preferences = user_store.get_user_preferences(st.session_state['username'])
+        # if user has no preferences
+        if not preferences:
+            st.info("""You have no preferences specified. 
+            Start defining your interests within the [Preferences](/Preferences) page.""")
     # if login was not successful
     elif st.session_state['authentication_status'] is False:
         st.error('❌ Username/password is incorrect')

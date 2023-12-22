@@ -1,37 +1,47 @@
-import platform
 import logging
+import platform
 from typing import Final, Optional
 
 import requests
-from bs4 import BeautifulSoup
 import streamlit as st
 import torch
+from bs4 import BeautifulSoup
 from qdrant_client.http.models import Record
 from sentence_transformers import SentenceTransformer
 
 from quotes_recommender.core.constants import SENTENCE_ENCODER_PATH, GOODREADS_QUOTES_URL
 from quotes_recommender.core.models import UserPreference
+from quotes_recommender.user_store.models import PreferenceKey
+from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
 
+user_store = RedisUserStoreSingleton().user_store
 logger = logging.getLogger(__name__)
 
 
-def switch_opposite_button(button_key: str) -> None:
+def switch_opposite_button(button_key: str, quote_id: int, hash_key: str) -> None:
     """
     Deselects an opposite button if one of two corresponding (dis-)like buttons was clicked.
     :param button_key: The unique key of the button that has to be switched.
+    :param quote_id: The unique ID of the quote under which it is stored in Qdrant.
+    :param hash_key: The preference hash key. Can either be a hash key for a like or dislike.
     :return: None
     """
+    # set state of opposite checkbox to the negated value of the current checkbox
     st.session_state[button_key] = False if st.session_state[button_key] is True else False
+    # remove opposite preference from Redis if available because a preference should only be available in one
+    # set at a time
+    if user_store.delete_user_preference(hash_key, member=quote_id) is False:
+        st.toast('Failed to save preferences. Please try again later.', icon='🕠')
 
 
 @st.cache_resource
 def load_sentence_bert() -> SentenceTransformer:
     """
-    Loads and caches SentenceBERT model.
+    Loading the sentence encoder from path or from HF if not locally available.
     :return: None
     """
-    """Loading the sentence encoder from path or from HF if not locally available."""
-    sentence_bert = SentenceTransformer(str(SENTENCE_ENCODER_PATH))
+    with st.spinner("Preparing query encoding. Hang on, we hurry up!"):
+        sentence_bert = SentenceTransformer(str(SENTENCE_ENCODER_PATH))
     # find device for encoding
     # set default device
     device: str | torch.device = 'cpu'
@@ -83,6 +93,8 @@ def display_quotes(quotes: list[Record], display_buttons: bool = False) -> Optio
     :param display_buttons: Whether to display (dis-)like buttons.
     :return: None
     """
+    # set preference keys
+    hash_keys = PreferenceKey(username=st.session_state['username'])
     # init likes/dislikes accumulators
     preferences: list[UserPreference] = []
     # display each quote
@@ -112,7 +124,7 @@ def display_quotes(quotes: list[Record], display_buttons: bool = False) -> Optio
                         help="Yes, I want to see more like this!",
                         key=like_key,
                         on_change=switch_opposite_button,
-                        args=[dislike_key]
+                        args=[dislike_key, quote.id, hash_keys.dislike_key]
                     )
                     if like_btn:
                         preferences.append(UserPreference(id=quote.id, like=True))
@@ -123,7 +135,7 @@ def display_quotes(quotes: list[Record], display_buttons: bool = False) -> Optio
                         help="Yuk, show me less like this!",
                         key=dislike_key,
                         on_change=switch_opposite_button,
-                        args=[like_key]
+                        args=[like_key, quote.id, hash_keys.like_key]
                     )
                     if dislike_btn:
                         preferences.append(UserPreference(id=quote.id, like=False))
