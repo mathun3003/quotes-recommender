@@ -1,3 +1,4 @@
+import itertools
 import logging
 from typing import Optional, Any, Mapping
 
@@ -122,17 +123,43 @@ class RedisUserStore:
                 )
         # build hash keys
         hash_keys = PreferenceKey(username=username)
-        # create pipeline
+        if likes:
+            # sync likes
+            self._sync_preferences(
+                preferences=likes, src_hash_key=hash_keys.dislike_key, dst_hash_key=hash_keys.like_key
+            )
+        if dislikes:
+            # sync dislikes
+            self._sync_preferences(
+                preferences=dislikes, src_hash_key=hash_keys.like_key, dst_hash_key=hash_keys.dislike_key
+            )
+        # TODO: return True if everything went else False
+        return True
+
+    def _sync_preferences(self, preferences: list[int], src_hash_key: str, dst_hash_key: str) -> None:
+        """
+        Synchronizes the preferences for the logged-in user in order to keep mutually exclusiveness of
+        preferences in Redis.
+        :param preferences: Either like or dislike IDs.
+        :param src_hash_key: Hash key of the source/opposite set of provided preferences
+        (i.e., hash key for dislikes if likes were provided).
+        :param dst_hash_key: Hash key of the destination/target set of provided preferences
+        (i.e., hash key for likes if likes were provided).
+        :return: True if any transaction was successful and false if not.
+        """
         with self._client.pipeline() as pipe:
-            # TODO: rename function to 'sync_user_preferences'
-            # TODO: remove IDs from sets that are not part of the input list
-            # add commands
-            if likes:
-                pipe.sadd(hash_keys.like_key, *likes)
-            if dislikes:
-                pipe.sadd(hash_keys.dislike_key, *dislikes)
-            # execute pipeline and return operation results. Return False if no members were set
-            return True if sum(pipe.execute()) != 0 else False
+            # if at least a single preference is already a member of the opposite set
+            # (i.e., if at least a single 1 is contained)
+            if any((index_list := list(map(int, self._client.smismember(src_hash_key, preferences))))):
+                # move it to the correct set (i.e, src set)
+                for dislike in list(itertools.compress(preferences, index_list)):
+                    pipe.smove(src_hash_key, dst_hash_key, dislike)
+            # add remaining preferences (i.e., those with an index of 0) to the corresponding set (i.e., src set)
+            # therefore, invert index_list items (0 -> 1, 1 -> 0)
+            if any((inverted_index_list := [not idx for idx in index_list])):
+                pipe.sadd(dst_hash_key, *list(itertools.compress(preferences, inverted_index_list)))
+            pipe.execute()
+            pipe.close()
 
     def delete_user_preference(self, hash_key: str, member: int) -> Optional[bool]:
         """

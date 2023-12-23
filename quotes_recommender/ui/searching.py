@@ -29,6 +29,7 @@ st.divider()
 if submitted:
     if not query or len(query.strip()) == 0:
         st.error('Please enter a search query.')
+        st.stop()
 
     with st.spinner('Searching for quotes...'):
         quotes = vector_store.get_content_based_recommendation(

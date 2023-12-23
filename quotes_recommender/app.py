@@ -4,17 +4,20 @@ from st_pages import show_pages_from_config
 from streamlit_authenticator.exceptions import RegisterError
 
 from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
-from quotes_recommender.utils.streamlit import display_quotes
 from quotes_recommender.vector_store.vector_store_singleton import QdrantVectorStoreSingleton
 
 vector_store = QdrantVectorStoreSingleton().vector_store
 user_store = RedisUserStoreSingleton().user_store
 
+# TODO: add logging to streamlit app
 
 # set page config
 st.set_page_config(
     page_title='SageSnippets',
     page_icon='💬',
+    menu_items={
+        'About': '[Source Code](https://github.com/mathun3003/quotes-recommender)'
+    }
 )
 # load pages
 show_pages_from_config()

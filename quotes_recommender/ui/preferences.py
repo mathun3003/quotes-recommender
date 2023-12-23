@@ -33,8 +33,9 @@ if st.session_state['authentication_status']:
     You can also filter by tags and/or authors to .
     """)
     st.divider()
-    # select by tags
-    tags = st.multiselect(label="Filters", options=extract_tag_filters(), placeholder="Filter by tags.")
+    with st.spinner('Loading filters...', cache=True):
+        # select by tags
+        tags = st.multiselect(label="Filters", options=extract_tag_filters(), placeholder="Filter by tags.")
     with st.spinner('Loading quotes...'):
         # get quotes from vector store
         quotes, next_page_offset = vector_store.scroll_points(limit=10, tags=[tag.lower() for tag in tags])
