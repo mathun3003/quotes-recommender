@@ -185,3 +185,7 @@ class QdrantVectorStore:
         )
         # return points and next_page_offset
         return points[0], points[1]
+
+    def search_points(self, ids: list[int | str]):
+        # TODO
+        pass

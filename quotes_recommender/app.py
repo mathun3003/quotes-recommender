@@ -4,6 +4,7 @@ from st_pages import show_pages_from_config
 from streamlit_authenticator.exceptions import RegisterError
 
 from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
+from quotes_recommender.utils.streamlit import display_quotes
 from quotes_recommender.vector_store.vector_store_singleton import QdrantVectorStoreSingleton
 
 vector_store = QdrantVectorStoreSingleton().vector_store
@@ -53,6 +54,12 @@ with login_tab:
         if not preferences:
             st.info("""You have no preferences specified. 
             Start defining your interests within the [Preferences](/Preferences) page.""")
+        else:
+            # extract (dis-)likes from preferences
+            likes = [preference.id for preference in preferences if preference.like]
+            dislikes = [preference.id for preference in preferences if not preference.like]
+            # TODO: fetch data from Qdrant
+            # TODO: display quotes with (dis-)likes
     # if login was not successful
     elif st.session_state['authentication_status'] is False:
         st.error('❌ Username/password is incorrect')
