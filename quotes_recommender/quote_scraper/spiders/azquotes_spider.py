@@ -52,7 +52,7 @@ class QuotesSpider(scrapy.Spider):
                     author=quote.css(self.SELECTOR_AUTHOR).get(),
                     quote=quote.css(self.SELECTOR_TEXT).get(),
                     num_likes=int(quote.css(self.SELECTOR_LIKES).get()),
-                    tags=quote.css(self.SELECTOR_TAGS).getall(),
+                    tags=[quote.lower() for quote in quote.css(self.SELECTOR_TAGS).getall()],
                 ),
             )
             yield quote_result.model_dump()

@@ -62,9 +62,9 @@ ROBOTSTXT_OBEY = True
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 # Low number indicates a high priority of the pipeline
-ITEM_PIPELINES = {
-    "quotes_recommender.quote_scraper.pipelines.QuotesToQdrantPipeline": 300,
-}
+# ITEM_PIPELINES = {
+#     "quotes_recommender.quote_scraper.pipelines.QuotesToQdrantPipeline": 300,
+# }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
