@@ -51,7 +51,7 @@ class QuotesSpider(scrapy.Spider):
                 data=QuoteData.model_construct(
                     author=quote.css(self.SELECTOR_AUTHOR).get(),
                     quote=quote.css(self.SELECTOR_TEXT).get(),
-                    num_likes=int(quote.css(self.SELECTOR_LIKES).get()),
+                    likes=int(quote.css(self.SELECTOR_LIKES).get()),
                     tags=[quote.lower() for quote in quote.css(self.SELECTOR_TAGS).getall()],
                 ),
             )

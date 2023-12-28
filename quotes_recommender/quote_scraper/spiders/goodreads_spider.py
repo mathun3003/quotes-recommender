@@ -101,7 +101,7 @@ class GoodreadsSpider(scrapy.Spider):
                     author_profile=response.urljoin(response.css(self.QUOTE_AVATAR).get()),
                     avatar_img=response.css(self.QUOTE_AVATAR_IMG).extract_first(),
                     quote=response.css(self.QUOTE_TEXT).get().strip().lstrip('“').rstrip('”'),
-                    num_likes=num_likes,
+                    likes=num_likes,
                     feed_url=response.url,
                     tags=response.css(self.QUOTE_TAGS).extract(),
                     liking_users=liking_users,
