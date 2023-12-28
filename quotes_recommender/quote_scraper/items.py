@@ -15,7 +15,7 @@ class QuoteData(BaseModel):  # TODO Split up the class into dedicated core and o
     author_profile: str = Field(description="Information page of the quote author")
     avatar_img: str = Field(description="Embedded link to avatar image.")
     quote: str = Field(description="The actual quote.")
-    num_likes: int = Field(description="Number of likes the quote received.")
+    likes: int = Field(description="Number of likes the quote received.")
     feed_url: str = Field(description="The URL to the quote's feed.")
     tags: list[str] = Field(description="List of tags the quote got assigned to.")
     liking_users: list[User] = Field(description="List of users that liked the quote.")

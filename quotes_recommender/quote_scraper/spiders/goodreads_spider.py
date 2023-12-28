@@ -85,7 +85,7 @@ class GoodreadsSpider(scrapy.Spider):
         liking_users = response.meta.get('liking_users', []) + current_page_liking_users
         next_user_page = response.css(self.NEXT_SELECTOR).extract_first()
 
-        if next_user_page:  # "page=N" not in
+        if "page=2" not in next_user_page:  # "page=N" not in
             yield scrapy.Request(
                 response.urljoin(next_user_page), callback=self.parse_subpage, meta={'liking_users': liking_users}
             )
@@ -101,7 +101,7 @@ class GoodreadsSpider(scrapy.Spider):
                     author_profile=response.urljoin(response.css(self.QUOTE_AVATAR).get()),
                     avatar_img=response.css(self.QUOTE_AVATAR_IMG).extract_first(),
                     quote=response.css(self.QUOTE_TEXT).get().strip().lstrip('“').rstrip('”'),
-                    num_likes=num_likes,
+                    likes=num_likes,
                     feed_url=response.url,
                     tags=response.css(self.QUOTE_TAGS).extract(),
                     liking_users=liking_users,
