@@ -166,5 +166,5 @@ cython_debug/
 .idea/
 
 ## remove DS_Store
-*.DS_Store
+**/.DS_Store
 
