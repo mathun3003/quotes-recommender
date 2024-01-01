@@ -19,7 +19,7 @@ class SentenceBERTSingleton(Singleton):  # pylint: disable=too-few-public-method
     def init(self, *args: Any, **kwargs: Any) -> None:  # pylint: disable=unused-argument
         """Load model from path or download it from HF"""
         # try to load model from path, otherwise download it from HF
-        if not SENTENCE_ENCODER_PATH.exists():
+        if not SENTENCE_ENCODER_PATH:
             logger.info('Download SentenceBERT from HuggingFace Hub.')
         else:
             logger.info(f'Load SentenceBERT from path {SENTENCE_ENCODER_PATH}')
