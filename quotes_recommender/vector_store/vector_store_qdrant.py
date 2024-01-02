@@ -7,7 +7,7 @@ import requests
 from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.http.models import Distance, PointStruct, UpdateStatus, VectorParams, ScoredPoint, Filter, \
-    FieldCondition, MatchAny, PayloadSelectorInclude, Record
+    FieldCondition, MatchAny, PayloadSelectorInclude, Record, RecommendStrategy
 from requests import HTTPError
 
 from quotes_recommender.quote_scraper.items import QuoteItem, ExtendedQuoteData
@@ -158,6 +158,33 @@ class QdrantVectorStore:
         # return payload results
         return hits
 
+    def get_item_item_recommendations(
+            self,
+            negatives: Sequence[int],
+            positives: Optional[Sequence[int]] = None,
+            limit: int = 10,
+            collection: str = DEFAULT_QUOTE_COLLECTION
+    ) -> list[ScoredPoint]:
+        """
+        Use the Qdrant recommendations API to receive item-based recommendations.
+        :param positives: IDs of positive examples to search for.
+        :param negatives: IDs of negative examples to avoid.
+        :param limit: Number of results.
+        :param collection: Where to search for points.
+        :return: List of recommendations.
+        """
+        recommendations = self.client.recommend(
+            collection_name=collection,
+            positive=positives,
+            negative=negatives,
+            limit=limit,
+            with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text']),  # TODO: get from pydantic model
+            strategy=RecommendStrategy.BEST_SCORE,
+            # TODO: adjust param for optimized search (https://qdrant.tech/documentation/concepts/explore/#best-score-strategy)
+            # params={'ef': 64}
+        )
+        return recommendations
+
     def scroll_points(
             self,
             tags: Optional[list[str]] = None,
@@ -166,12 +193,12 @@ class QdrantVectorStore:
             collection: str = DEFAULT_QUOTE_COLLECTION
     ) -> tuple[list[Record], Optional[int | str | Any]]:
         """
-        # TODO
-        :param tags:
-        :param offset:
-        :param limit:
-        :param collection:
-        :return:
+        Scroll points from Qdrant.
+        :param tags: Tag filters.
+        :param offset: Offset where to start.
+        :param limit: Number of results.
+        :param collection: Where to search for points.
+        :return: Page results and next page offset.
         """
         points = self.client.scroll(
             collection_name=collection,
@@ -186,6 +213,16 @@ class QdrantVectorStore:
         # return points and next_page_offset
         return points[0], points[1]
 
-    def search_points(self, ids: list[int | str]):
-        # TODO
-        pass
+    def search_points(self, ids: Sequence[int | str], collection: str = DEFAULT_QUOTE_COLLECTION) -> list[Record]:
+        """
+        Searching points by IDs.
+        :param ids: List or sequence of point IDs.
+        :param collection: Where to search for points.
+        :return: Points with payloads.
+        """
+        hits = self.client.retrieve(
+            collection_name=collection,
+            ids=ids,
+            with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text'])  # TODO: get from pydantic model
+        )
+        return hits

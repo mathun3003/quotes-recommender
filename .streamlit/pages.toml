@@ -5,7 +5,7 @@ icon = "🏠"
 
 [[pages]]
 path = "quotes_recommender/ui/preferences.py"
-name = "Preferences"
+name = "Set Preferences"
 icon = "♥️"
 
 [[pages]]
@@ -15,5 +15,5 @@ icon = "🔍"
 
 [[pages]]
 path = "quotes_recommender/ui/recommendations.py"
-name = "See Recommendations"
+name = "Recommendations"
 icon = "🤖"

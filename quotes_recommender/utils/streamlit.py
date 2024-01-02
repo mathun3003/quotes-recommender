@@ -52,15 +52,6 @@ def load_sentence_bert() -> SentenceTransformer:
     return sentence_bert
 
 
-@st.cache_resource
-def load_logo() -> str:
-    """
-    Loads the logo from path.
-    :return: Byte encoding of image.
-    """
-    return str(LOGO_PATH.absolute())
-
-
 def click_search_button() -> None:
     """
     Auxiliary function to add statefulness to the search button.
@@ -84,21 +75,35 @@ def extract_tag_filters() -> list[str]:
         response.raise_for_status()
 
     soup = BeautifulSoup(response.text, 'html.parser')
-    options = [option.text.split()[0].strip() for option in soup.select(tag_selector)]
+    options = sorted(list(set(option.text.split()[0].strip() for option in soup.select(tag_selector))))
     return options
 
 
-def display_quotes(quotes: list[Record], display_buttons: bool = False) -> Optional[list[UserPreference]]:
+def display_quotes(
+        quotes: list[Record],
+        display_buttons: bool = False,
+        ratings: Optional[list[UserPreference]] = None
+) -> Optional[list[UserPreference]]:
     """
     Auxiliary function to render quotes in streamlit.
     :param quotes: List of quotes from Qdrant.
     :param display_buttons: Whether to display (dis-)like buttons.
+    :param ratings: User ratings that should be displayed for each quote.
     :return: None
     """
+    if ratings and not display_buttons:
+        raise ValueError(
+            "User ratings can only be passed in combination with checkboxes. Set 'display_buttons' to True."
+        )
     # init likes/dislikes accumulators
     preferences: list[UserPreference] = []
     # display each quote
     for quote in quotes:
+        # search for corresponding rating by ID
+        if ratings:
+            # find corresponding rating based on ID
+            rating = next(filter(lambda r: r.id == quote.id, ratings), None)
+        # construct quote container
         with st.container(border=True):
             left_quote_col, right_quote_col = st.columns(spec=[0.7, 0.3])
             # display text, author, and tags on left hand side
@@ -124,7 +129,8 @@ def display_quotes(quotes: list[Record], display_buttons: bool = False) -> Optio
                         help="Yes, I want to see more like this!",
                         key=like_key,
                         on_change=switch_opposite_button,
-                        args=[dislike_key]
+                        args=[dislike_key],
+                        value=rating.like if rating else False
                     )
                     if like_btn:
                         preferences.append(UserPreference(id=quote.id, like=True))
@@ -135,7 +141,8 @@ def display_quotes(quotes: list[Record], display_buttons: bool = False) -> Optio
                         help="Yuk, show me less like this!",
                         key=dislike_key,
                         on_change=switch_opposite_button,
-                        args=[like_key]
+                        args=[like_key],
+                        value=not rating.like if rating else False
                     )
                     if dislike_btn:
                         preferences.append(UserPreference(id=quote.id, like=False))

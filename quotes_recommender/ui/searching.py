@@ -1,11 +1,19 @@
 import streamlit as st
 
+from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
 from quotes_recommender.utils.streamlit import load_sentence_bert, click_search_button, extract_tag_filters, \
     display_quotes
 from quotes_recommender.vector_store.vector_store_singleton import QdrantVectorStoreSingleton
 
-vector_store = QdrantVectorStoreSingleton().vector_store
+st.set_page_config(layout='centered')
+
+try:
+    user_store = RedisUserStoreSingleton().user_store
+    vector_store = QdrantVectorStoreSingleton().vector_store
+except AttributeError:
+    st.rerun()
 sentence_bert = load_sentence_bert()
+
 
 # init state for search button
 if 'clicked' not in st.session_state:
@@ -39,6 +47,12 @@ if submitted:
 
     if not quotes:
         st.info("No quotes found. Please search for some other quotes or change filters.")
-    # display quotes
-    display_quotes(quotes)
-
+    # display quotes (including ratings)
+    ratings = user_store.get_user_preferences(st.session_state['username'])
+    preferences = display_quotes(quotes, display_buttons=True, ratings=ratings)
+    if preferences and not st.session_state['username']:
+        st.toast("Please login or register to keep track of your preferences.")
+    # write preferences to redis if the user is logged-in
+    if preferences and (username := st.session_state['username']):
+        if not user_store.set_user_preferences(username=username, preferences=preferences):
+            st.toast('Failed to save preferences. Please try again later.', icon='🕠')
