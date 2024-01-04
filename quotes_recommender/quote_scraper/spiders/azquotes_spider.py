@@ -46,7 +46,7 @@ class QuotesSpider(scrapy.Spider):
         """Scraping quotes from the author"""
         for quote in response.css(self.SELECTOR_QUOTE):
             id_attr = quote.css(self.SELECTOR_ID).get()
-            id_number = re.search(QUOTE_ID_REGEX, id_attr).group() if id_attr else None
+            id_number = re.search(self.QUOTE_ID_REGEX, id_attr).group() if id_attr else None
 
             if id_number is None:
                 continue
