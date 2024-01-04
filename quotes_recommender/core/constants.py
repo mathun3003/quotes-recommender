@@ -1,6 +1,8 @@
+from pathlib import Path
 from typing import Final
 
 TXT_ENCODING: Final[str] = 'utf-8'
 
 # Paths
-SENTENCE_ENCODER_PATH: Final[str] = 'all-mpnet-base-v2'
+DATA_PATH: Final[Path] = Path('data')
+SENTENCE_ENCODER_PATH: Final[Path] = DATA_PATH / 'all-mpnet-base-v2'
