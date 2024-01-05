@@ -3,10 +3,26 @@ from pydantic import Field
 from quotes_recommender.core.models import ForbidExtraModel
 
 
-class PreferenceKey(ForbidExtraModel):
-    """Base class defining a Redis hash key for user preferences"""
+class BaseKey(ForbidExtraModel):
+    """Base class defining a Redis hash key"""
 
-    username: str = Field(description="The username of the user.")
+    username: str = Field(description="The username of the logged-in user.")
+
+
+class CredentialsKey(BaseKey):
+    """Class defining a Redis hash key for user credentials."""
+
+    @property
+    def key(self) -> str:
+        """
+        Returning the Redis hash key containing the username.
+        :return: Credentials Redis hash key
+        """
+        return f"user:{self.username}:credentials"
+
+
+class PreferenceKey(BaseKey):
+    """Class defining a Redis hash key for user preferences"""
 
     @property
     def _base_key(self) -> str:

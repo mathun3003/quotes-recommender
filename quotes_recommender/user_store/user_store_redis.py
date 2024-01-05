@@ -7,7 +7,7 @@ import redis
 from quotes_recommender.core.constants import TXT_ENCODING
 from quotes_recommender.core.models import UserPreference
 from quotes_recommender.user_store.constants import DEFAULT_BATCH_SIZE
-from quotes_recommender.user_store.models import PreferenceKey
+from quotes_recommender.user_store.models import PreferenceKey, CredentialsKey
 from quotes_recommender.utils.redis import RedisConfig
 
 logger = logging.getLogger(__name__)
@@ -68,12 +68,15 @@ class RedisUserStore:
         # init dict for credentials
         user_credentials: Mapping[str, Any] = {}
         # get all usernames
-        usernames: list[str] = self.scan(type_filter='hash')
+        credential_hashes: list[str] = self.scan(type_filter='hash')
         # get credentials for every username
-        for username in usernames:
+        for credential_hash in credential_hashes:
+            # extract username from hash key
+            username: str = credential_hash.split(':')[1]
             user_credentials[username] = {
+                # get corresponding credentials
                 key.decode(TXT_ENCODING): value.decode(TXT_ENCODING)
-                for key, value in self._client.hgetall(username).items()
+                for key, value in self._client.hgetall(credential_hash).items()
             }
         return user_credentials
 
@@ -84,7 +87,7 @@ class RedisUserStore:
         :param credentials: The credentials of the new user.
         :return: True if all fields were added, else False.
         """
-        hash_key: str = f"user:{username}:credentials"
+        hash_key: str = CredentialsKey(username=username).key
         added_fields = self._client.hset(name=hash_key, mapping=credentials)
         return True if added_fields == len(credentials) else False
 
@@ -110,6 +113,7 @@ class RedisUserStore:
         :param preferences: The list of user preferences.
         :return: Whether operation was successful
         """
+        # TODO: change preferences input to ids lists, remove subsequent code section
         # split user preferences up into likes/dislikes
         likes, dislikes = [], []
         for preference in preferences:
@@ -145,7 +149,7 @@ class RedisUserStore:
         (i.e., hash key for dislikes if likes were provided).
         :param dst_hash_key: Hash key of the destination/target set of provided preferences
         (i.e., hash key for likes if likes were provided).
-        :return: True if any transaction was successful and false if not.
+        :return: None
         """
         with self._client.pipeline() as pipe:
             # if at least a single preference is already a member of the opposite set
@@ -161,14 +165,19 @@ class RedisUserStore:
             pipe.execute()
             pipe.close()
 
-    def delete_user_preference(self, hash_key: str, member: int) -> Optional[bool]:
+    def delete_user_preference(self, username: str, members: int, likes: bool) -> Optional[bool]:
         """
         Removes a member from a set if it is part of it.
-        :param hash_key: The key of the set.
-        :param member: The identifier of the member,
+        :param username: The username of the logged-in user.
+        :param members: The identifier of the member,
+        :param likes: Whether members are likes or dislikes
         :return: Whether the operation was successful.
         """
+        # construct appropriate hash key
+        hash_key: str = PreferenceKey(username=username).like_key if likes \
+            else PreferenceKey(username=username).dislike_key
         # check if the member exists in the given set
-        if self._client.sismember(hash_key, member):
-            result = self._client.srem(hash_key, member)
+        if self._client.smismember(hash_key, members):
+            result = self._client.srem(hash_key, *members)
             return True if result != 0 else False
+        return False

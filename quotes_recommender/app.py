@@ -76,30 +76,82 @@ with login_tab:
             likes_ids = [preference.id for preference in preferences if preference.like]
             dislikes_ids = [preference.id for preference in preferences if not preference.like]
             # fetch data from Qdrant
-            likes, dislikes = vector_store.search_points(likes_ids), vector_store.search_points(dislikes_ids)
+            liked_quotes, disliked_quotes = vector_store.search_points(likes_ids), vector_store.search_points(
+                dislikes_ids)
             # display preferences
             left_col, right_col = st.columns(2)
             with left_col:
                 st.write('### Your Likes')
-                set_likes = display_quotes(likes, display_buttons=True, ratings=preferences)
+                if liked_quotes:
+                    # TODO: make 'display_quotes' just return the IDs?
+                    set_likes = display_quotes(liked_quotes, display_buttons=True, ratings=preferences)
+                else:
+                    st.info('You have no liked quotes.')
+                    set_likes = []
             with right_col:
                 st.write('### Your Dislikes')
-                set_dislikes = display_quotes(dislikes, display_buttons=True, ratings=preferences)
+                if disliked_quotes:
+                    # TODO: make 'display_quotes' just return the IDs?
+                    set_dislikes = display_quotes(disliked_quotes, display_buttons=True, ratings=preferences)
+                else:
+                    st.info('You have no disliked quotes.')
+                    set_dislikes = []
             # check if any preference changes were made
-            changed_likes: list[UserPreference] = [preference for preference in set_likes
-                                                   if preference not in list(filter(lambda p: p.like is True,
-                                                                                    preferences))]
-            changed_dislikes: list[UserPreference] = [preference for preference in set_dislikes
-                                                      if preference not in list(filter(lambda p: p.like is False,
-                                                                                       preferences))]
+            if set_likes:
+                # TODO: use likes_ids list
+                added_likes: list[UserPreference] = [preference for preference in set_likes
+                                                     if preference not in list(filter(lambda p: p.like is True,
+                                                                                      preferences))]
+            else:
+                added_likes = []
+            # if no new likes were added, some like has been unselected
+            if not added_likes:
+                if set_likes:
+                    # get symmetric set differences in order to get likes that were unselected
+                    unselected_likes: list[int] = list(
+                        set([preference.id for preference in set_likes]) ^ set(likes_ids))
+                else:
+                    unselected_likes = likes_ids
+                if unselected_likes:
+                    # delete the unselected likes from stored preferences
+                    if not user_store.delete_user_preference(username=st.session_state['username'],
+                                                             members=unselected_likes, likes=True):
+                        st.toast('Failed to save preferences. Please try again later.', icon='🕠')
+                    else:
+                        st.rerun()
+
+            if set_dislikes:
+                # TODO: use dislikes_ids list
+                added_dislikes: list[UserPreference] = [preference for preference in set_dislikes
+                                                        if preference not in list(filter(lambda p: p.like is False,
+                                                                                         preferences))]
+            else:
+                added_dislikes = []
+            # if no new dislikes were added, some dislike has been unselected
+            if not added_dislikes:
+                if set_dislikes:
+                    # get symmetric set differences in order to get likes that were unselected
+                    unselected_dislikes: list[int] = list(
+                        set([preference.id for preference in set_dislikes]) ^ set(dislikes_ids)
+                    )
+                else:
+                    unselected_dislikes = dislikes_ids
+                if unselected_dislikes:
+                    # delete the unselected dislikes from stored user preferences
+                    if not user_store.delete_user_preference(username=st.session_state['username'],
+                                                             members=unselected_dislikes, likes=False):
+                        st.toast('Failed to save preferences. Please try again later.', icon='🕠')
+                    else:
+                        st.rerun()
             # write changed preferences to redis
-            if changed_dislikes or changed_likes:
-                changed_preferences = changed_dislikes + changed_likes
+            if added_dislikes or added_likes:
+                changed_preferences = added_dislikes + added_likes
                 if not user_store.set_user_preferences(username=st.session_state['username'],
                                                        preferences=changed_preferences):
                     st.toast('Failed to save preferences. Please try again later.', icon='🕠')
                 else:
                     st.rerun()
+
     # if login was not successful
     elif st.session_state['authentication_status'] is False:
         st.error('❌ Username/password is incorrect')
@@ -121,6 +173,7 @@ with register_tab:
                 # store in redis
                 if not user_store.register_user(username=new_username, credentials=new_credentials):
                     st.error("Oops, you broke the internet... Please try again later.")
+                    st.stop()
             st.success("You successfully registered for SageSnippets! 🎉")
             st.write("You can now log in via the 'Sign In' tab.")
     except RegisterError as register_error:
