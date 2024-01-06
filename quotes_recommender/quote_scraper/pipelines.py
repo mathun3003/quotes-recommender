@@ -1,13 +1,12 @@
 import logging
 
-from sentence_transformers import SentenceTransformer
-
+from quotes_recommender.ml_models.sentence_encoder import SentenceBERT
 from quotes_recommender.vector_store.vector_store_singleton import (
     QdrantVectorStoreSingleton,
 )
 
 logger = logging.getLogger(__name__)
-model = SentenceTransformer('all-mpnet-base-v2')  # TODO Replace by its class
+model = SentenceBERT()
 
 
 class QuotesToQdrantPipeline:
@@ -36,6 +35,8 @@ class QuotesToQdrantPipeline:
             logger.info("NO Dups found")
 
         #self.vector_store.upsert_quotes([item], [embeddings])
+        embeddings = model.encode_quote(item['data']['quote'])
+        self.vector_store.upsert_quotes([item], [embeddings])
         return item
 
     def open_spider(self, spider) -> None:  # pylint: disable=unused-argument
