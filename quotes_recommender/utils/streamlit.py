@@ -57,7 +57,7 @@ def click_search_button() -> None:
     Auxiliary function to add statefulness to the search button.
     :return: None
     """
-    st.session_state.clicked_search_button = True
+    st.session_state.search_button_clicked = True
 
 
 @st.cache_data
@@ -83,20 +83,23 @@ def display_quotes(
         quotes: list[Record],
         display_buttons: bool = False,
         ratings: Optional[list[UserPreference]] = None
-) -> Optional[list[UserPreference]]:
+) -> Optional[tuple[list[int], list[int]]]:
     """
     Auxiliary function to render quotes in streamlit.
+
+    Unpack results to receive liked and disliked quote IDs:
+    likes, dislikes = display_quotes(...)
     :param quotes: List of quotes from Qdrant.
     :param display_buttons: Whether to display (dis-)like buttons.
     :param ratings: User ratings that should be displayed for each quote.
-    :return: None
+    :return: Lists of liked and disliked quote IDs.
     """
     if ratings and not display_buttons:
         raise ValueError(
             "User ratings can only be passed in combination with checkboxes. Set 'display_buttons' to True."
         )
     # init likes/dislikes accumulators
-    preferences: list[UserPreference] = []
+    likes, dislikes = [], []
     # display each quote
     for quote in quotes:
         # search for corresponding rating by ID
@@ -133,7 +136,7 @@ def display_quotes(
                         value=rating.like if rating else False
                     )
                     if like_btn:
-                        preferences.append(UserPreference(id=quote.id, like=True))
+                        likes.append(quote.id)
                 with right_btn_col:
                     # dislike button
                     dislike_btn = st.checkbox(
@@ -145,7 +148,7 @@ def display_quotes(
                         value=not rating.like if rating else False
                     )
                     if dislike_btn:
-                        preferences.append(UserPreference(id=quote.id, like=False))
+                        dislikes.append(quote.id)
 
-    if display_buttons and preferences:
-        return preferences
+    if display_buttons:
+        return likes, dislikes

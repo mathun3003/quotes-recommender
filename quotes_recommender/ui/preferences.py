@@ -51,7 +51,7 @@ if st.session_state['authentication_status']:
     preferences = display_quotes(quotes, display_buttons=True, ratings=ratings)
     # write preferences to redis
     if preferences:
-        if not user_store.set_user_preferences(username=st.session_state['username'], preferences=preferences):
+        if not user_store.set_user_preferences(username=st.session_state['username'], *preferences):
             st.toast('Failed to save preferences. Please try again later.', icon='🕠')
 else:
     st.info('🔔 Please login/register to specify preferences.')

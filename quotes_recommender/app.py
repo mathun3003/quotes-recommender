@@ -46,7 +46,7 @@ authenticator = stauth.Authenticate(
 login_tab, register_tab, forgot_password_tab = st.tabs(["Sign In", "Sign Up", "Reset Password"])
 
 # Sign In tab
-with login_tab:
+with (login_tab):
     authenticator.login(form_name='Login', location='main')
     # if login was successful
     if st.session_state['authentication_status']:
@@ -58,9 +58,9 @@ with login_tab:
         st.write(f"## Welcome {st.session_state['name']} 👋")
         with st.spinner('Loading your preferences'):
             # get (dis-)likes (if any) of logged-in user
-            preferences = user_store.get_user_preferences(st.session_state['username'])
+            like_preferences, dislike_preferences = user_store.get_user_preferences(st.session_state['username'])
         # if user has no preferences
-        if not preferences:
+        if (not like_preferences) and (not dislike_preferences):
             st.info("""You have no preferences specified. 
             Start defining your interests on the Preferences page.""")
         else:
@@ -72,82 +72,70 @@ with login_tab:
             Based on your preferences, you can see recommendations on the [recommendations page](/Recommendations).
             """)
             st.divider()
-            # extract (dis-)likes from preferences
-            likes_ids = [preference.id for preference in preferences if preference.like]
-            dislikes_ids = [preference.id for preference in preferences if not preference.like]
+
             # fetch data from Qdrant
-            liked_quotes, disliked_quotes = vector_store.search_points(likes_ids), vector_store.search_points(
-                dislikes_ids)
+            liked_quotes, disliked_quotes = vector_store.search_points(like_preferences), \
+                vector_store.search_points(dislike_preferences)
+            # construct UserPreference instances in order to display later
+            like_ratings: list[UserPreference] = [UserPreference(id=liked_quote.id, like=True)
+                                                  for liked_quote in liked_quotes]
+            dislike_ratings: list[UserPreference] = [UserPreference(id=disliked_quote.id, like=False)
+                                                     for disliked_quote in disliked_quotes]
+
+            # init accumulators for set likes and dislikes
+            set_likes, set_dislikes = set(), set()
             # display preferences
             left_col, right_col = st.columns(2)
             with left_col:
                 st.write('### Your Likes')
                 if liked_quotes:
-                    # TODO: make 'display_quotes' just return the IDs?
-                    set_likes = display_quotes(liked_quotes, display_buttons=True, ratings=preferences)
+                    # get quote IDs of liked quotes for this session
+                    set_likes_left, set_dislikes_left = display_quotes(liked_quotes,
+                                                                       display_buttons=True,
+                                                                       ratings=like_ratings)
+                    # add user inputs to accumulators
+                    set_likes.update(set_likes_left)
+                    set_dislikes.update(set_dislikes_left)
                 else:
                     st.info('You have no liked quotes.')
-                    set_likes = []
             with right_col:
                 st.write('### Your Dislikes')
                 if disliked_quotes:
-                    # TODO: make 'display_quotes' just return the IDs?
-                    set_dislikes = display_quotes(disliked_quotes, display_buttons=True, ratings=preferences)
+                    # get quote IDs of disliked quotes for this session
+                    set_likes_right, set_dislikes_right = display_quotes(disliked_quotes,
+                                                                         display_buttons=True,
+                                                                         ratings=dislike_ratings)
+                    # add user inputs to accumulators
+                    set_likes.update(set_likes_right)
+                    set_dislikes.update(set_dislikes_right)
                 else:
                     st.info('You have no disliked quotes.')
-                    set_dislikes = []
-            # check if any preference changes were made
-            if set_likes:
-                # TODO: use likes_ids list
-                added_likes: list[UserPreference] = [preference for preference in set_likes
-                                                     if preference not in list(filter(lambda p: p.like is True,
-                                                                                      preferences))]
-            else:
-                added_likes = []
-            # if no new likes were added, some like has been unselected
-            if not added_likes:
-                if set_likes:
-                    # get symmetric set differences in order to get likes that were unselected
-                    unselected_likes: list[int] = list(
-                        set([preference.id for preference in set_likes]) ^ set(likes_ids))
-                else:
-                    unselected_likes = likes_ids
-                if unselected_likes:
-                    # delete the unselected likes from stored preferences
-                    if not user_store.delete_user_preference(username=st.session_state['username'],
-                                                             members=unselected_likes, likes=True):
-                        st.toast('Failed to save preferences. Please try again later.', icon='🕠')
-                    else:
-                        st.rerun()
 
-            if set_dislikes:
-                # TODO: use dislikes_ids list
-                added_dislikes: list[UserPreference] = [preference for preference in set_dislikes
-                                                        if preference not in list(filter(lambda p: p.like is False,
-                                                                                         preferences))]
-            else:
-                added_dislikes = []
-            # if no new dislikes were added, some dislike has been unselected
-            if not added_dislikes:
-                if set_dislikes:
-                    # get symmetric set differences in order to get likes that were unselected
-                    unselected_dislikes: list[int] = list(
-                        set([preference.id for preference in set_dislikes]) ^ set(dislikes_ids)
-                    )
+            # if new likes were added
+            if new_likes := set_likes.difference(set(like_preferences)):
+                # add them to redis
+                if not user_store.set_user_preferences(username=st.session_state['username'], likes=new_likes):
+                    st.toast('Failed to save preferences. Please try again later.', icon='🕠')
                 else:
-                    unselected_dislikes = dislikes_ids
-                if unselected_dislikes:
-                    # delete the unselected dislikes from stored user preferences
-                    if not user_store.delete_user_preference(username=st.session_state['username'],
-                                                             members=unselected_dislikes, likes=False):
-                        st.toast('Failed to save preferences. Please try again later.', icon='🕠')
-                    else:
-                        st.rerun()
-            # write changed preferences to redis
-            if added_dislikes or added_likes:
-                changed_preferences = added_dislikes + added_likes
-                if not user_store.set_user_preferences(username=st.session_state['username'],
-                                                       preferences=changed_preferences):
+                    st.rerun()
+            # if new dislikes were added
+            elif new_dislikes := set_dislikes.difference(set(dislike_preferences)):
+                # add them to redis
+                if not user_store.set_user_preferences(username=st.session_state['username'], dislikes=new_dislikes):
+                    st.toast('Failed to save preferences. Please try again later.', icon='🕠')
+                else:
+                    st.rerun()
+            # if no new likes were added, they have to be unselected
+            elif (not new_likes) and (unset_likes := set(like_preferences).difference(set_likes)):
+                # delete them from redis
+                if not user_store.delete_user_preference(username=st.session_state['username'], likes=unset_likes):
+                    st.toast('Failed to save preferences. Please try again later.', icon='🕠')
+                else:
+                    st.rerun()
+            # if no new dislikes were added, they have to be unselected
+            elif (not new_dislikes) and (unset_dislikes := set(dislike_preferences).difference(set_dislikes)):
+                # delete them from redis
+                if not user_store.delete_user_preference(username=st.session_state['username'], dislikes=unset_dislikes):
                     st.toast('Failed to save preferences. Please try again later.', icon='🕠')
                 else:
                     st.rerun()

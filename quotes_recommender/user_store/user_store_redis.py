@@ -91,40 +91,36 @@ class RedisUserStore:
         added_fields = self._client.hset(name=hash_key, mapping=credentials)
         return True if added_fields == len(credentials) else False
 
-    def get_user_preferences(self, username: str) -> Optional[list[UserPreference]]:
+    def get_user_preferences(self, username: str) -> tuple[list[int], list[int]]:
         """
         Returns all preferences for a given user.
+
+        Unpack result to receive likes and dislikes separately:
+        like_ids, dislike_ids = user_store.get_user_preferences(...)
         :param username: The username of the logged-in user.
-        :return: The list of user preferences.
+        :return: Lists of liked and disliked quotes' IDs.
         """
         # create hash keys from username
         hash_keys = PreferenceKey(username=username)
         likes = self._client.smembers(name=hash_keys.like_key)
         dislikes = self._client.smembers(name=hash_keys.dislike_key)
-        return (
-                [UserPreference(id=member, like=True) for member in likes] +
-                [UserPreference(id=member, like=False) for member in dislikes]
-        )
+        # return encoded likes and dislikes
+        return (list(map(lambda x: int(x.decode(TXT_ENCODING)), likes)),
+                list(map(lambda x: int(x.decode(TXT_ENCODING)), dislikes)))
 
-    def set_user_preferences(self, username: str, preferences: list[UserPreference]) -> bool:
+    def set_user_preferences(
+            self,
+            username: str,
+            likes: Optional[list[int]] = None,
+            dislikes: Optional[list[int]] = None
+    ) -> bool:
         """
         Sets the preferences of the logged-in user.
         :param username: The username of the logged-in user.
-        :param preferences: The list of user preferences.
+        :param likes: List of quote IDs of liked quotes.
+        :param dislikes: List of quote IDs of disliked quotes.
         :return: Whether operation was successful
         """
-        # TODO: change preferences input to ids lists, remove subsequent code section
-        # split user preferences up into likes/dislikes
-        likes, dislikes = [], []
-        for preference in preferences:
-            if preference.like:
-                likes.append(preference.id)
-            elif not preference.like:
-                dislikes.append(preference.id)
-            else:
-                raise ValueError(
-                    f"User preference with id {preference.id} has wrong value for like attr: {preference.like}"
-                )
         # build hash keys
         hash_keys = PreferenceKey(username=username)
         if likes:
@@ -165,19 +161,24 @@ class RedisUserStore:
             pipe.execute()
             pipe.close()
 
-    def delete_user_preference(self, username: str, members: int, likes: bool) -> Optional[bool]:
+    def delete_user_preference(self, username: str, likes: Optional[list[int]] = None,
+                               dislikes: Optional[list[int]] = None) -> Optional[bool]:
         """
         Removes a member from a set if it is part of it.
         :param username: The username of the logged-in user.
-        :param members: The identifier of the member,
-        :param likes: Whether members are likes or dislikes
+        :param likes: List of quote IDs of liked quotes.
+        :param dislikes: List of quote IDs of disliked quotes.
         :return: Whether the operation was successful.
         """
-        # construct appropriate hash key
+        if likes and dislikes:
+            raise ValueError('Can only specify likes or dislikes to delete, not both.')
+        elif (not likes) and (not dislikes):
+            raise ValueError('Either specify likes or dislikes.')
+        # construct corresponding hash key
         hash_key: str = PreferenceKey(username=username).like_key if likes \
             else PreferenceKey(username=username).dislike_key
         # check if the member exists in the given set
-        if self._client.smismember(hash_key, members):
-            result = self._client.srem(hash_key, *members)
+        if self._client.smismember(hash_key, likes if likes else dislikes):
+            result = self._client.srem(hash_key, *likes if likes else dislikes)
             return True if result != 0 else False
         return False

@@ -43,16 +43,13 @@ if st.session_state['authentication_status']:
     st.divider()
 
     # get ratings for logged-in user
-    preferences = user_store.get_user_preferences(st.session_state['username'])
-    if not preferences:
+    likes, dislikes = user_store.get_user_preferences(st.session_state['username'])
+    if (not likes) and (not dislikes):
         st.info("🔔 You have not specified any preferences. Please specify any on the 'Set Preferences' page.")
         st.stop()
     else:
-        # extract positives and negatives from preferences
-        positives: list[int] = [preference.id for preference in list(filter(lambda p: p.like is True, preferences))]
-        negatives: list[int] = [preferences.id for preferences in list(filter(lambda p: p.like is False, preferences))]
         # get recommendations
-        recommendations = vector_store.get_item_item_recommendations(positives=positives, negatives=negatives)
+        recommendations = vector_store.get_item_item_recommendations(positives=likes, negatives=dislikes)
         display_quotes(recommendations)
 else:
     st.info('🔔 Please login/register to see your recommendations.')
