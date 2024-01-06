@@ -106,6 +106,13 @@ def display_quotes(
         if ratings:
             # find corresponding rating based on ID
             rating = next(filter(lambda r: r.id == quote.id, ratings), None)
+            # init checkbox default values
+            like_value, dislike_value = False, False
+            # if a rating was found
+            if rating:
+                # set corresponding values
+                like_value: bool = rating.like
+                dislike_value: bool = not rating.like
         # construct quote container
         with st.container(border=True):
             left_quote_col, right_quote_col = st.columns(spec=[0.7, 0.3])
@@ -133,7 +140,7 @@ def display_quotes(
                         key=like_key,
                         on_change=switch_opposite_button,
                         args=[dislike_key],
-                        value=rating.like if rating else False
+                        value=like_value
                     )
                     if like_btn:
                         likes.append(quote.id)
@@ -145,7 +152,7 @@ def display_quotes(
                         key=dislike_key,
                         on_change=switch_opposite_button,
                         args=[like_key],
-                        value=not rating.like if rating else False
+                        value=dislike_value
                     )
                     if dislike_btn:
                         dislikes.append(quote.id)

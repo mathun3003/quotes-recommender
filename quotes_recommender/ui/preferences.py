@@ -1,6 +1,7 @@
 import streamlit as st
 import streamlit_authenticator as stauth
 
+from quotes_recommender.core.models import UserPreference
 from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
 from quotes_recommender.utils.streamlit import display_quotes, extract_tag_filters
 from quotes_recommender.vector_store.vector_store_singleton import QdrantVectorStoreSingleton
@@ -46,12 +47,16 @@ if st.session_state['authentication_status']:
     # display quotes with buttons
     st.divider()
     # get ratings (if any) for logged-in user
-    ratings = user_store.get_user_preferences(st.session_state['username'])
+    likes, dislikes = user_store.get_user_preferences(st.session_state['username'])
+    # construct UserPreference instances in order to display later
+    like_ratings: list[UserPreference] = list(map(lambda x: UserPreference(id=x, like=True), likes))
+    dislike_ratings: list[UserPreference] = list(map(lambda x: UserPreference(id=x, like=False), dislikes))
     # display quotes and collect user preferences
-    preferences = display_quotes(quotes, display_buttons=True, ratings=ratings)
+    set_likes, set_dislikes = display_quotes(quotes, display_buttons=True, ratings=like_ratings + dislike_ratings)
     # write preferences to redis
-    if preferences:
-        if not user_store.set_user_preferences(username=st.session_state['username'], *preferences):
+    if set_likes or set_dislikes:
+        if not user_store.set_user_preferences(username=st.session_state['username'],
+                                               likes=set_likes, dislikes=set_dislikes):
             st.toast('Failed to save preferences. Please try again later.', icon='🕠')
 else:
     st.info('🔔 Please login/register to specify preferences.')
