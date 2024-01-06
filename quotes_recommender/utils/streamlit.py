@@ -102,12 +102,12 @@ def display_quotes(
     likes, dislikes = [], []
     # display each quote
     for quote in quotes:
+        # init checkbox default values
+        like_value, dislike_value = False, False
         # search for corresponding rating by ID
         if ratings:
             # find corresponding rating based on ID
             rating = next(filter(lambda r: r.id == quote.id, ratings), None)
-            # init checkbox default values
-            like_value, dislike_value = False, False
             # if a rating was found
             if rating:
                 # set corresponding values

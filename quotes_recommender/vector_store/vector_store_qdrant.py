@@ -7,7 +7,8 @@ import requests
 from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.http.models import Distance, PointStruct, UpdateStatus, VectorParams, ScoredPoint, Filter, \
-    FieldCondition, MatchAny, PayloadSelectorInclude, Record, RecommendStrategy
+    FieldCondition, MatchAny, PayloadSelectorInclude, Record, RecommendStrategy, SearchParams, ScalarQuantizationConfig, \
+    ScalarType
 from requests import HTTPError
 
 from quotes_recommender.quote_scraper.items import QuoteItem, ExtendedQuoteData
@@ -51,8 +52,9 @@ class QdrantVectorStore:
         if ping:
             try:
                 # use workaround instead of service API as it contains a bug
-                response = requests.get(
-                    f'{qdrant_config.https_url if qdrant_config.use_https else qdrant_config.http_url}/healthz', timeout=60
+                requests.get(
+                    f'{qdrant_config.https_url if qdrant_config.use_https else qdrant_config.http_url}/healthz',
+                    timeout=60
                 )
             except ConnectionError as exc:
                 logger.error("Cannot connect to Qdrant. Is the database running?")
@@ -70,7 +72,6 @@ class QdrantVectorStore:
         Creates a default collection and payload index.
         :return: None
         """
-        # TODO: create HNSW index (?)
         # create default collection
         if not self.client.create_collection(
                 collection_name=DEFAULT_QUOTE_COLLECTION,
@@ -78,6 +79,10 @@ class QdrantVectorStore:
                 vectors_config=VectorParams(
                     size=DEFAULT_EMBEDDING_SIZE, distance=Distance.COSINE, on_disk=self.on_disk_payload
                 ),
+                quantization_config=ScalarQuantizationConfig(
+                    type=ScalarType.INT8,
+                    always_ram=True
+                )
         ):
             raise ConnectionError(f'Could not create {DEFAULT_QUOTE_COLLECTION} collection.')
         # create default index
@@ -178,10 +183,10 @@ class QdrantVectorStore:
             positive=positives,
             negative=negatives,
             limit=limit,
-            with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text']),  # TODO: get from pydantic model
+            # TODO: get from pydantic model
+            with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text']),
             strategy=RecommendStrategy.BEST_SCORE,
-            # TODO: adjust param for optimized search (https://qdrant.tech/documentation/concepts/explore/#best-score-strategy)
-            # params={'ef': 64}
+            search_params=SearchParams(hnsw_ef=256, exact=True)
         )
         return recommendations
 
@@ -208,7 +213,8 @@ class QdrantVectorStore:
             limit=limit,
             offset=offset,
             with_vectors=False,
-            with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text'])  # TODO: get from pydantic model
+            # TODO: get from pydantic model
+            with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text'])
         )
         # return points and next_page_offset
         return points[0], points[1]
@@ -223,6 +229,7 @@ class QdrantVectorStore:
         hits = self.client.retrieve(
             collection_name=collection,
             ids=ids,
-            with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text'])  # TODO: get from pydantic model
+            # TODO: get from pydantic model
+            with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text'])
         )
         return hits

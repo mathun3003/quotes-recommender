@@ -54,9 +54,26 @@ if st.session_state['authentication_status']:
     # display quotes and collect user preferences
     set_likes, set_dislikes = display_quotes(quotes, display_buttons=True, ratings=like_ratings + dislike_ratings)
     # write preferences to redis
-    if set_likes or set_dislikes:
-        if not user_store.set_user_preferences(username=st.session_state['username'],
-                                               likes=set_likes, dislikes=set_dislikes):
+    # if new likes were added
+    if new_likes := set(set_likes).difference(set(likes)):
+        # add them to redis
+        if not user_store.set_user_preferences(username=st.session_state['username'], likes=new_likes):
             st.toast('Failed to save preferences. Please try again later.', icon='🕠')
+    # if new dislikes were added
+    elif new_dislikes := set(set_dislikes).difference(set(dislikes)):
+        # add them to redis
+        if not user_store.set_user_preferences(username=st.session_state['username'], dislikes=new_dislikes):
+            st.toast('Failed to save preferences. Please try again later.', icon='🕠')
+    # if no new likes were added, they have to be unselected
+    elif (not new_likes) and (unset_likes := set(likes).difference(set_likes)):
+        # delete them from redis
+        if not user_store.delete_user_preference(username=st.session_state['username'], likes=unset_likes):
+            st.toast('Failed to save preferences. Please try again later.', icon='🕠')
+    # if no new dislikes were added, they have to be unselected
+    elif (not new_dislikes) and (unset_dislikes := set(dislikes).difference(set_dislikes)):
+        # delete them from redis
+        if not user_store.delete_user_preference(username=st.session_state['username'], dislikes=unset_dislikes):
+            st.toast('Failed to save preferences. Please try again later.', icon='🕠')
+
 else:
     st.info('🔔 Please login/register to specify preferences.')
