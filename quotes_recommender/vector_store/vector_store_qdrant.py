@@ -1,13 +1,21 @@
 import logging
-from typing import Sequence, Optional, Any
+from typing import Sequence, Optional
 
 import numpy as np
 import numpy.typing as npt
 import requests
 from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
-from qdrant_client.http.models import Distance, PointStruct, UpdateStatus, VectorParams, ScoredPoint, Filter, \
-    FieldCondition, MatchAny, PayloadSelectorInclude, Record
+from qdrant_client.http.models import (
+    Distance,
+    FieldCondition,
+    Filter,
+    MatchAny,
+    PointStruct,
+    ScoredPoint,
+    UpdateStatus,
+    VectorParams,
+)
 from requests import HTTPError
 
 from quotes_recommender.quote_scraper.items import Quote
@@ -118,12 +126,12 @@ class QdrantVectorStore:
         return response.status
 
     def get_content_based_recommendation(
-            self,
-            query_embedding: npt.NDArray[np.float64],
-            tags: Optional[list[str]] = None,
-            limit: int = 10,
-            score_threshold: Optional[float] = None,
-            collection: str = DEFAULT_QUOTE_COLLECTION,
+        self,
+        query_embedding: npt.NDArray[np.float64],
+        tags: Optional[list[str]] = None,
+        limit: int = 10,
+        score_threshold: Optional[float] = None,
+        collection: str = DEFAULT_QUOTE_COLLECTION,
     ) -> list[Optional[ScoredPoint]]:
         """
         Get content-based recommendations for the specified query.
@@ -155,11 +163,8 @@ class QdrantVectorStore:
         )
         # return payload results
         return hits
-    
-    def get_similarity_scores(
-            self,
-            query_embedding: npt.NDArray[np.float64]
-    ) -> list[Optional[ScoredPoint]]:
+
+    def get_similarity_scores(self, query_embedding: npt.NDArray[np.float64]) -> list[Optional[ScoredPoint]]:
         """
         Get similarity scores for the specified query.
         Used for determining tuples for data fusion.

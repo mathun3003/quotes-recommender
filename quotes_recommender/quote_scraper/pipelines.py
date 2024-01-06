@@ -21,21 +21,11 @@ class QuotesToQdrantPipeline:
         :param item (dict): An item containing quote data.
         :param spider: The Scrapy spider instance.
         """
-        embeddings = model.encode(item['data']['quote'])
-        dups = self.vector_store.get_similarity_scores(embeddings)
-
-        if dups:
-            logger.info("###############################")
-            logger.warning("####### Duplicate found #######")
-            logger.info(f"New: {item['data']['quote']}")
-            logger.info(f"Exists: {dups}")
-            logger.info("###############################")
-        else:
-            logger.info("###############################")
-            logger.info("NO Dups found")
-
-        #self.vector_store.upsert_quotes([item], [embeddings])
         embeddings = model.encode_quote(item['data']['quote'])
+        dups = self.vector_store.get_similarity_scores(embeddings)
+        if dups:
+            logger.warning("####### Duplicate found #######")
+            return item
         self.vector_store.upsert_quotes([item], [embeddings])
         return item
 
