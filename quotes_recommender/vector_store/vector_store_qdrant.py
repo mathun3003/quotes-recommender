@@ -158,8 +158,8 @@ class QdrantVectorStore:
             # fmt: on
             limit=limit,
             score_threshold=score_threshold,
-            # only select relevant payload fields
-            # with_payload=PayloadSelectorInclude(include=list(ExtendedQuoteData.model_fields.keys())),
+            #only select relevant payload fields
+            with_payload=PayloadSelectorInclude(include=list(ExtendedQuoteData.model_fields.keys())),
         )
         # return payload results
         return hits
