@@ -11,6 +11,7 @@ from qdrant_client.http.models import (
     FieldCondition,
     Filter,
     MatchAny,
+    PayloadSelectorInclude,
     PointStruct,
     ScoredPoint,
     UpdateStatus,
