@@ -35,7 +35,7 @@ class QuotesToQdrantPipeline:
             logger.info("###############################")
             logger.info("NO Dups found")
 
-        #self.vector_store.upsert_quotes([item], [embeddings])
+        # self.vector_store.upsert_quotes([item], [embeddings])
         return item
 
     def open_spider(self, spider) -> None:  # pylint: disable=unused-argument
