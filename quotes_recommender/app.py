@@ -3,6 +3,7 @@ import streamlit_authenticator as stauth
 from st_pages import show_pages_from_config
 from streamlit_authenticator.exceptions import RegisterError
 
+from quotes_recommender.core.constants import LOGO_PATH
 from quotes_recommender.core.models import UserPreference
 from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
 from quotes_recommender.utils.streamlit import display_quotes
@@ -28,8 +29,13 @@ st.set_page_config(
 # load pages
 show_pages_from_config()
 
-# set title
-st.title('SageSnippets')
+# set title and icon
+c1, c2 = st.columns([0.08, 0.92])
+with c1:
+    st.image(str(LOGO_PATH), width=40, use_column_width='auto')
+with c2:
+    st.title('SageSnippets')
+
 st.write('A Quote Recommender for Finding the Right Words to Express Your Thoughts')
 
 # TODO: set description
