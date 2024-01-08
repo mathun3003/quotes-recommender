@@ -23,6 +23,8 @@ class QuotesSpider(scrapy.Spider):
 
     SELECTOR_NEXT_PAGE: Final[str] = "li.next a::attr(href)"
 
+    QUOTE_ID_REGEX: Final[str] = r'\d+$'
+
     def start_requests(self):
         url = "https://www.azquotes.com/quotes/authors/a/"
         yield scrapy.Request(url=url, callback=self.parse)
@@ -44,15 +46,18 @@ class QuotesSpider(scrapy.Spider):
         """Scraping quotes from the author"""
         for quote in response.css(self.SELECTOR_QUOTE):
             id_attr = quote.css(self.SELECTOR_ID).get()
-            id_number = re.search(r'\d+$', id_attr).group() if id_attr else None
+            id_number = re.search(self.QUOTE_ID_REGEX, id_attr).group() if id_attr else None
+
+            if id_number is None:
+                continue
 
             quote_result = Quote.model_construct(
                 id=int(id_number),
                 data=QuoteData.model_construct(
                     author=quote.css(self.SELECTOR_AUTHOR).get(),
                     quote=quote.css(self.SELECTOR_TEXT).get(),
-                    num_likes=int(quote.css(self.SELECTOR_LIKES).get()),
-                    tags=quote.css(self.SELECTOR_TAGS).getall(),
+                    likes=int(quote.css(self.SELECTOR_LIKES).get()),
+                    tags=[quote.lower() for quote in quote.css(self.SELECTOR_TAGS).getall()],
                 ),
             )
             yield quote_result.model_dump()

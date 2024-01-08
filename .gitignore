@@ -7,7 +7,7 @@ __pycache__/
 *.so
 
 # Mac stuff
-**/.DS_Store
+*/.DS_Store
 
 # Distribution / packaging
 .Python
@@ -166,5 +166,5 @@ cython_debug/
 .idea/
 
 ## remove DS_Store
-*.DS_Store
+**/.DS_Store
 
