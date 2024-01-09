@@ -11,7 +11,6 @@ from qdrant_client.http.models import (
     FieldCondition,
     Filter,
     MatchAny,
-    PayloadSelectorInclude,
     PointStruct,
     ScoredPoint,
     UpdateStatus,
@@ -160,8 +159,6 @@ class QdrantVectorStore:
             # fmt: on
             limit=limit,
             score_threshold=score_threshold,
-            #only select relevant payload fields
-            with_payload=PayloadSelectorInclude(include=list(ExtendedQuoteData.model_fields.keys())),
         )
         # return payload results
         return hits
@@ -177,7 +174,6 @@ class QdrantVectorStore:
 
         Reference: https://qdrant.github.io/qdrant/redoc/index.html#tag/points/operation/search_points
         """
-        # build the search query
         dups = self.client.search(
             collection_name='quotes',
             query_vector=query_embedding,
