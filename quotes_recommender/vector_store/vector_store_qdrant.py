@@ -1,5 +1,5 @@
 import logging
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -126,6 +126,7 @@ class QdrantVectorStore:
         # return status
         return response.status
 
+    # pylint: disable=too-many-arguments
     def get_content_based_recommendation(
         self,
         query_embedding: npt.NDArray[np.float64],
@@ -133,7 +134,7 @@ class QdrantVectorStore:
         limit: int = 10,
         score_threshold: Optional[float] = None,
         collection: str = DEFAULT_QUOTE_COLLECTION,
-    ) -> list[Optional[ScoredPoint]]:
+    ) -> Optional[list[ScoredPoint]]:
         """
         Get content-based recommendations for the specified query.
         :param query_embedding: The encoded user search string.
@@ -165,7 +166,7 @@ class QdrantVectorStore:
         # return payload results
         return hits
 
-    def get_similarity_scores(self, query_embedding: npt.NDArray[np.float64]) -> list[Optional[ScoredPoint]]:
+    def get_similarity_scores(self, query_embedding: npt.NDArray[np.float64]) -> Optional[list[ScoredPoint]]:
         """
         Get similarity scores for the specified query.
         Used for determining tuples for data fusion.
