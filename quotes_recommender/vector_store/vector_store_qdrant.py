@@ -12,7 +12,6 @@ from qdrant_client.http.models import (
     FieldCondition,
     Filter,
     MatchAny,
-    MatchValue,
     PointStruct,
     ScoredPoint,
     UpdateStatus,
@@ -184,6 +183,7 @@ class QdrantVectorStore:
         )
         # return payload results
         return dups
+
     def get_entry_by_author(
         self,
         query_embedding: npt.NDArray[np.float64],
@@ -207,15 +207,15 @@ class QdrantVectorStore:
             query_filter=models.Filter(
                 must=[
                     models.FieldCondition(
-                    key='author',
-                    match=models.MatchValue(
-                        value=author,
+                        key='author',
+                        match=models.MatchValue(
+                            value=author,
                         ),
                     )
                 ]
             ),
             limit=1,
-            score_threshold=0
+            score_threshold=0,
         )
         # return payload results
         return result
