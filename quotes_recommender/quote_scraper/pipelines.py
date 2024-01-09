@@ -22,10 +22,18 @@ class QuotesToQdrantPipeline:
         :param spider: The Scrapy spider instance.
         """
         embeddings = model.encode_quote(item['data']['quote'])
-        dups = self.vector_store.get_similarity_scores(embeddings)
+        dups = self.vector_store.get_similarity_scores(query_embedding=embeddings)
         if dups:
+            # Check for duplicates
             logger.warning("####### Duplicate found #######")
             return item
+        else:
+            # Check existence of author with image
+            author_name = item['data']['author']
+            sim_author = self.vector_store.get_entry_by_author(query_embedding=embeddings, author=author_name)
+            if sim_author:
+                avatar_image = [scored_point.payload.get('avatar_img') for scored_point in sim_author]
+                item['data']['avatar_img'] = avatar_image
         self.vector_store.upsert_quotes([item], [embeddings])
         return item
 
