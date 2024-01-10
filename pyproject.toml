@@ -58,6 +58,10 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
     help = "Run the goodreads-spider locally"
     cmd = "scrapy crawl goodreads-spider"
 
+    [tool.poe.tasks.scrape-azquotes]
+    help = "Run the azquotes-spider locally"
+    cmd = "scrapy crawl azquotes-spider"
+
     [tool.poe.tasks.debug-ui]
     help = "Runs the Streamlit UI in Debug mode"
     cmd = "streamlit run quotes_recommender/app.py --server.runOnSave true --server.allowRunOnSave true"
