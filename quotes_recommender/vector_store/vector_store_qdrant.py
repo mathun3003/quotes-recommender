@@ -214,7 +214,6 @@ class QdrantVectorStore:
                     )
                 ]
             ),
-            limit=1,
             score_threshold=0,
         )
         # return payload results
