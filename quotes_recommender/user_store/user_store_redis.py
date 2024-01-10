@@ -1,13 +1,12 @@
 import itertools
 import logging
-from typing import Optional, Any, Mapping
+from typing import Any, Mapping, Optional, Sequence
 
 import redis
 
 from quotes_recommender.core.constants import TXT_ENCODING
-from quotes_recommender.core.models import UserPreference
 from quotes_recommender.user_store.constants import DEFAULT_BATCH_SIZE
-from quotes_recommender.user_store.models import PreferenceKey, CredentialsKey
+from quotes_recommender.user_store.models import CredentialsKey, PreferenceKey
 from quotes_recommender.utils.redis import RedisConfig
 
 logger = logging.getLogger(__name__)
@@ -40,11 +39,11 @@ class RedisUserStore:
             logger.info('Connected to Redis.')
 
     def scan(
-            self,
-            search_str: Optional[str] = None,
-            batch_size: int = DEFAULT_BATCH_SIZE,
-            type_filter: Optional[str] = None,
-            cursor: int = 0,
+        self,
+        search_str: Optional[str] = None,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+        type_filter: Optional[str] = None,
+        cursor: int = 0,
     ) -> list[Any]:
         """
         Use SCAN function to receive key-value results for a search string or type filter.
@@ -60,13 +59,13 @@ class RedisUserStore:
         hits = self._client.scan(cursor=cursor, match=search_str, count=batch_size, _type=type_filter)
         return [hit.decode(TXT_ENCODING) for hit in hits[1]]
 
-    def get_user_credentials(self) -> Mapping[str, Any]:
+    def get_user_credentials(self) -> dict[Any, Any]:
         """
         Get all registered users and their credentials from redis.
         :return: usernames mapped to their corresponding credentials.
         """
         # init dict for credentials
-        user_credentials: Mapping[str, Any] = {}
+        user_credentials: dict[Any, Any] = {}
         # get all usernames
         credential_hashes: list[str] = self.scan(type_filter='hash')
         # get credentials for every username
@@ -80,7 +79,7 @@ class RedisUserStore:
             }
         return user_credentials
 
-    def register_user(self, username: str, credentials: Mapping[str, str]) -> bool:
+    def register_user(self, username: str, credentials: Mapping[str | bytes, bytes | float | int | str]) -> bool:
         """
         Creates a new hash for a new user
         :param username: The username of the new user.
@@ -89,7 +88,7 @@ class RedisUserStore:
         """
         hash_key: str = CredentialsKey(username=username).key
         added_fields = self._client.hset(name=hash_key, mapping=credentials)
-        return True if added_fields == len(credentials) else False
+        return added_fields == len(credentials)
 
     def get_user_preferences(self, username: str) -> tuple[list[int], list[int]]:
         """
@@ -105,14 +104,16 @@ class RedisUserStore:
         likes = self._client.smembers(name=hash_keys.like_key)
         dislikes = self._client.smembers(name=hash_keys.dislike_key)
         # return encoded likes and dislikes
-        return (list(map(lambda x: int(x.decode(TXT_ENCODING)), likes)),
-                list(map(lambda x: int(x.decode(TXT_ENCODING)), dislikes)))
+        return (
+            list(map(lambda x: int(x.decode(TXT_ENCODING)), likes)),
+            list(map(lambda x: int(x.decode(TXT_ENCODING)), dislikes)),
+        )
 
     def set_user_preferences(
-            self,
-            username: str,
-            likes: Optional[list[int]] = None,
-            dislikes: Optional[list[int]] = None
+        self,
+        username: str,
+        likes: Optional[Sequence[int | str] | set[int | str]] = None,
+        dislikes: Optional[Sequence[int | str] | set[int | str]] = None,
     ) -> bool:
         """
         Sets the preferences of the logged-in user.
@@ -133,10 +134,12 @@ class RedisUserStore:
             self._sync_preferences(
                 preferences=dislikes, src_hash_key=hash_keys.like_key, dst_hash_key=hash_keys.dislike_key
             )
-        # TODO: return True if everything went else False
+        # TODO: return True if everything went right else False
         return True
 
-    def _sync_preferences(self, preferences: list[int], src_hash_key: str, dst_hash_key: str) -> None:
+    def _sync_preferences(
+        self, preferences: Sequence[int | str] | set[int | str], src_hash_key: str, dst_hash_key: str
+    ) -> None:
         """
         Synchronizes the preferences for the logged-in user in order to keep mutually exclusiveness of
         preferences in Redis.
@@ -161,8 +164,12 @@ class RedisUserStore:
             pipe.execute()
             pipe.close()
 
-    def delete_user_preference(self, username: str, likes: Optional[list[int]] = None,
-                               dislikes: Optional[list[int]] = None) -> Optional[bool]:
+    def delete_user_preference(
+        self,
+        username: str,
+        likes: Optional[Sequence[int | str] | set[int | str]] = None,
+        dislikes: Optional[Sequence[int | str] | set[int | str]] = None,
+    ) -> Optional[bool]:
         """
         Removes a member from a set if it is part of it.
         :param username: The username of the logged-in user.
@@ -172,13 +179,14 @@ class RedisUserStore:
         """
         if likes and dislikes:
             raise ValueError('Can only specify likes or dislikes to delete, not both.')
-        elif (not likes) and (not dislikes):
+        if (not likes) and (not dislikes):
             raise ValueError('Either specify likes or dislikes.')
         # construct corresponding hash key
-        hash_key: str = PreferenceKey(username=username).like_key if likes \
-            else PreferenceKey(username=username).dislike_key
+        hash_key: str = (
+            PreferenceKey(username=username).like_key if likes else PreferenceKey(username=username).dislike_key
+        )
         # check if the member exists in the given set
         if self._client.smismember(hash_key, likes if likes else dislikes):
-            result = self._client.srem(hash_key, *likes if likes else dislikes)
-            return True if result != 0 else False
+            result = self._client.srem(hash_key, *likes if likes else dislikes)  # type: ignore
+            return result != 0
         return False

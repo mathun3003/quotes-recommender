@@ -4,7 +4,9 @@ import streamlit_authenticator as stauth
 from quotes_recommender.core.models import UserPreference
 from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
 from quotes_recommender.utils.streamlit import display_quotes, extract_tag_filters
-from quotes_recommender.vector_store.vector_store_singleton import QdrantVectorStoreSingleton
+from quotes_recommender.vector_store.vector_store_singleton import (
+    QdrantVectorStoreSingleton,
+)
 
 st.set_page_config(layout='centered')
 
@@ -16,11 +18,9 @@ except AttributeError:
 
 # configure authenticator
 authenticator = stauth.Authenticate(
-    credentials={
-        'usernames': user_store.get_user_credentials()
-    },
-    cookie_name='sage_snippet',
-    key='authenticator-preferences-subpage'
+    credentials={'usernames': user_store.get_user_credentials()},
+    cookie_name='sage_snippets',
+    key='authenticator-preferences-subpage',
 )
 
 if st.session_state['authentication_status']:
@@ -32,11 +32,13 @@ if st.session_state['authentication_status']:
 
     st.header('Your Preferences')
     st.subheader('Specify your interests')
-    st.write("""
-    In order to provide you the best possible recommendations, we need some information about your preferences and 
-    interests. Please consider the following quotes and specify at least five quotes you like and not like. 
+    st.write(
+        """
+    In order to provide you the best possible recommendations, we need some information about your preferences and
+    interests. Please consider the following quotes and specify at least five quotes you like and not like.
     You can also filter by tags and/or authors to narrow down the displayed quotes.
-    """)
+    """
+    )
     st.divider()
     with st.spinner('Loading filters...', cache=True):
         # select by tags
@@ -52,7 +54,9 @@ if st.session_state['authentication_status']:
     like_ratings: list[UserPreference] = list(map(lambda x: UserPreference(id=x, like=True), likes))
     dislike_ratings: list[UserPreference] = list(map(lambda x: UserPreference(id=x, like=False), dislikes))
     # display quotes and collect user preferences
-    set_likes, set_dislikes = display_quotes(quotes, display_buttons=True, ratings=like_ratings + dislike_ratings)
+    set_likes, set_dislikes = display_quotes(  # type: ignore
+        quotes, display_buttons=True, ratings=like_ratings + dislike_ratings
+    )
     # write preferences to redis
     # if new likes were added
     if new_likes := set(set_likes).difference(set(likes)):
@@ -67,12 +71,12 @@ if st.session_state['authentication_status']:
     # if no new likes were added, they have to be unselected
     elif (not new_likes) and (unset_likes := set(likes).difference(set_likes)):
         # delete them from redis
-        if not user_store.delete_user_preference(username=st.session_state['username'], likes=unset_likes):
+        if not user_store.delete_user_preference(username=st.session_state['username'], likes=list(unset_likes)):
             st.toast('Failed to save preferences. Please try again later.', icon='🕠')
     # if no new dislikes were added, they have to be unselected
     elif (not new_dislikes) and (unset_dislikes := set(dislikes).difference(set_dislikes)):
         # delete them from redis
-        if not user_store.delete_user_preference(username=st.session_state['username'], dislikes=unset_dislikes):
+        if not user_store.delete_user_preference(username=st.session_state['username'], dislikes=list(unset_dislikes)):
             st.toast('Failed to save preferences. Please try again later.', icon='🕠')
 
 else:

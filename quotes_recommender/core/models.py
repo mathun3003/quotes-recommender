@@ -22,5 +22,5 @@ class QuoteData(ForbidExtraModel):
 class UserPreference(ForbidExtraModel):
     """Class representing a user preference regarding a quote."""
 
-    id: int = Field(description="The ID under which the quote is stored in the database.", ge=1)
+    id: int | str = Field(description="The ID under which the quote is stored in the database.", ge=1)
     like: bool = Field(description="Whether the user preference was a like.")

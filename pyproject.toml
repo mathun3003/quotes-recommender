@@ -20,6 +20,7 @@ streamlit = "^1.29.0"
 st-pages = "^0.4.5"
 streamlit-authenticator = "^0.2.3"
 watchdog = "^3.0.0"
+beautifulsoup4 = "^4.12.2"
 
 [tool.poetry.group.ci.dependencies]
 mypy = "^1.5.1"
@@ -130,7 +131,7 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
 
 [tool.isort]
 profile = "black"
-py_version = 310
+py_version = 311
 
 [tool.black]
 line-length = 120
@@ -138,7 +139,7 @@ target-version = ["py311"]
 skip-string-normalization = true
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]  # TODO: remove this section once qdrant updated its client's dependencies
@@ -154,7 +155,8 @@ disable = [
     "W1203",  # logging-fstring-interpolation
     "E0213",  # no-self-argument
     "E1101",  # no-member
-    "W0511"   # To-Dos
+    "W0511",  # To-Dos
+    "R0903"   # too-few-public-methods
 ]
 
 [tool.pytest.ini_options]

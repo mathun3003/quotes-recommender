@@ -5,7 +5,7 @@ from quotes_recommender.utils.redis import RedisConfig
 from quotes_recommender.utils.singleton import Singleton
 
 
-class RedisUserStoreSingleton(Singleton):  # pylint: disable=too-few-public-methods
+class RedisUserStoreSingleton(Singleton):
     """Singleton class for Redis stack"""
 
     def init(self, *args: Any, **kwargs: Any) -> None:  # pylint: disable=unused-argument

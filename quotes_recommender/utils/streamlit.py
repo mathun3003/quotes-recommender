@@ -1,15 +1,18 @@
 import logging
 import platform
-from typing import Final, Optional
+from typing import Final, Optional, Sequence
 
 import requests
 import streamlit as st
 import torch
 from bs4 import BeautifulSoup
-from qdrant_client.http.models import Record
+from qdrant_client.http.models import Record, ScoredPoint
 from sentence_transformers import SentenceTransformer
 
-from quotes_recommender.core.constants import SENTENCE_ENCODER_PATH, GOODREADS_QUOTES_URL
+from quotes_recommender.core.constants import (
+    GOODREADS_QUOTES_URL,
+    SENTENCE_ENCODER_PATH,
+)
 from quotes_recommender.core.models import UserPreference
 from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
 
@@ -69,7 +72,7 @@ def extract_tag_filters() -> list[str]:
 
     tag_selector: Final[str] = 'li.greyText'
 
-    response = requests.get(str(GOODREADS_QUOTES_URL))
+    response = requests.get(str(GOODREADS_QUOTES_URL), timeout=60)
 
     if not response.ok:
         response.raise_for_status()
@@ -79,11 +82,12 @@ def extract_tag_filters() -> list[str]:
     return options
 
 
+# pylint: disable=too-many-locals
 def display_quotes(
-        quotes: list[Record],
-        display_buttons: bool = False,
-        ratings: Optional[list[UserPreference]] = None
-) -> Optional[tuple[list[int], list[int]]]:
+    quotes: Sequence[Record | ScoredPoint],
+    display_buttons: bool = False,
+    ratings: Optional[list[UserPreference]] = None,
+) -> Optional[tuple[list[int | str], list[int | str]]]:
     """
     Auxiliary function to render quotes in streamlit.
 
@@ -102,29 +106,33 @@ def display_quotes(
     likes, dislikes = [], []
     # display each quote
     for quote in quotes:
+        if not quote.payload:
+            raise ValueError(f"No payload found for quote {quote.id}")
         # init checkbox default values
         like_value, dislike_value = False, False
         # search for corresponding rating by ID
         if ratings:
             # find corresponding rating based on ID
-            rating = next(filter(lambda r: r.id == quote.id, ratings), None)
+            rating = next(filter(lambda r, quote_id=quote.id: r.id == quote_id, ratings), None)  # type: ignore
             # if a rating was found
             if rating:
                 # set corresponding values
-                like_value: bool = rating.like
-                dislike_value: bool = not rating.like
+                like_value = rating.like
+                dislike_value = not rating.like
         # construct quote container
         with st.container(border=True):
             left_quote_col, right_quote_col = st.columns(spec=[0.7, 0.3])
             # display text, author, and tags on left hand side
             with left_quote_col:
-                st.markdown(f"""
-                *„{quote.payload.get('text')}“*  
-                **― {quote.payload.get('author')}**""")
-                st.caption(f"Tags: {', '.join([tag.capitalize() for tag in quote.payload.get('tags')])}")
+                st.markdown(
+                    f"""
+                *„{quote.payload['text']}“*
+                **― {quote.payload['author']}**"""
+                )
+                st.caption(f"Tags: {', '.join([tag.capitalize() for tag in quote.payload['tags']])}")
             # display image on right hand side
             with right_quote_col:
-                if (img_link := quote.payload.get('avatar_img')) is not None:
+                if (img_link := quote.payload['avatar_img']) is not None:
                     st.image(img_link, use_column_width=True)
             if display_buttons:
                 # create unique keys for each checkbox
@@ -139,8 +147,8 @@ def display_quotes(
                         help="Yes, I want to see more like this!",
                         key=like_key,
                         on_change=switch_opposite_button,
-                        args=[dislike_key],
-                        value=like_value
+                        args=tuple(dislike_key),
+                        value=like_value,
                     )
                     if like_btn:
                         likes.append(quote.id)
@@ -151,11 +159,12 @@ def display_quotes(
                         help="Yuk, show me less like this!",
                         key=dislike_key,
                         on_change=switch_opposite_button,
-                        args=[like_key],
-                        value=dislike_value
+                        args=tuple(like_key),
+                        value=dislike_value,
                     )
                     if dislike_btn:
                         dislikes.append(quote.id)
 
     if display_buttons:
         return likes, dislikes
+    return None

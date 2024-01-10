@@ -4,14 +4,19 @@ import streamlit_authenticator as stauth
 from quotes_recommender.utils.streamlit import display_quotes
 
 try:
-    from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
-    from quotes_recommender.vector_store.vector_store_singleton import QdrantVectorStoreSingleton
+    from quotes_recommender.user_store.user_store_singleton import (
+        RedisUserStoreSingleton,
+    )
+    from quotes_recommender.vector_store.vector_store_singleton import (
+        QdrantVectorStoreSingleton,
+    )
 except KeyError:
     st.rerun()
 
 # set page layout
 st.set_page_config(layout='centered')
 
+# pylint: disable=duplicate-code
 try:
     vector_store = QdrantVectorStoreSingleton().vector_store
     user_store = RedisUserStoreSingleton().user_store
@@ -20,11 +25,9 @@ except AttributeError:
 
 # configure authenticator
 authenticator = stauth.Authenticate(
-    credentials={
-        'usernames': user_store.get_user_credentials()
-    },
-    cookie_name='sage_snippet',
-    key='authenticator-recommendations-subpage'
+    credentials={'usernames': user_store.get_user_credentials()},
+    cookie_name='sage_snippets',
+    key='authenticator-recommendations-subpage',
 )
 
 if st.session_state['authentication_status']:
@@ -35,11 +38,13 @@ if st.session_state['authentication_status']:
     st.sidebar.write(f"Logged in as {st.session_state['name']}")
 
     st.header('Your Recommendations')
-    st.write("""
-    Here you can see your recommendations. The more preferences you have specified, the more accurate your 
+    st.write(
+        """
+    Here you can see your recommendations. The more preferences you have specified, the more accurate your
     recommendations will get. It is recommended to have at least three likes and dislikes respectively in order to
     receive meaningful recommendations.
-    """)
+    """
+    )
     st.divider()
 
     # get ratings for logged-in user
@@ -53,4 +58,3 @@ if st.session_state['authentication_status']:
         display_quotes(recommendations)
 else:
     st.info('🔔 Please login/register to see your recommendations.')
-

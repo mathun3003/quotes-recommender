@@ -1,17 +1,30 @@
 import logging
-from typing import Sequence, Optional, Any
+from typing import Any, Optional, Sequence
 
 import numpy as np
 import numpy.typing as npt
 import requests
 from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
-from qdrant_client.http.models import Distance, PointStruct, UpdateStatus, VectorParams, ScoredPoint, Filter, \
-    FieldCondition, MatchAny, PayloadSelectorInclude, Record, RecommendStrategy, SearchParams, ScalarQuantizationConfig, \
-    ScalarType
+from qdrant_client.http.models import (
+    Distance,
+    FieldCondition,
+    Filter,
+    MatchAny,
+    PayloadSelectorInclude,
+    PointStruct,
+    RecommendStrategy,
+    Record,
+    ScalarQuantizationConfig,
+    ScalarType,
+    ScoredPoint,
+    SearchParams,
+    UpdateStatus,
+    VectorParams,
+)
 from requests import HTTPError
 
-from quotes_recommender.quote_scraper.items import QuoteItem, ExtendedQuoteData
+from quotes_recommender.quote_scraper.items import ExtendedQuoteData, QuoteItem
 from quotes_recommender.utils.qdrant import QdrantConfig
 from quotes_recommender.vector_store.constants import (
     DEFAULT_EMBEDDING_SIZE,
@@ -26,7 +39,7 @@ class QdrantVectorStore:
     """Redis document store class for inserting, querying, and searching tasks"""
 
     def __init__(
-            self, qdrant_config: QdrantConfig, on_disk: bool = True, timeout: float = 60.0, ping: bool = True
+        self, qdrant_config: QdrantConfig, on_disk: bool = True, timeout: float = 60.0, ping: bool = True
     ) -> None:
         """
         Init Qdrant vector store instance.
@@ -54,7 +67,7 @@ class QdrantVectorStore:
                 # use workaround instead of service API as it contains a bug
                 requests.get(
                     f'{qdrant_config.https_url if qdrant_config.use_https else qdrant_config.http_url}/healthz',
-                    timeout=60
+                    timeout=60,
                 )
             except ConnectionError as exc:
                 logger.error("Cannot connect to Qdrant. Is the database running?")
@@ -74,29 +87,26 @@ class QdrantVectorStore:
         """
         # create default collection
         if not self.client.create_collection(
-                collection_name=DEFAULT_QUOTE_COLLECTION,
-                on_disk_payload=self.on_disk_payload,
-                vectors_config=VectorParams(
-                    size=DEFAULT_EMBEDDING_SIZE, distance=Distance.COSINE, on_disk=self.on_disk_payload
-                ),
-                quantization_config=ScalarQuantizationConfig(
-                    type=ScalarType.INT8,
-                    always_ram=True
-                )
+            collection_name=DEFAULT_QUOTE_COLLECTION,
+            on_disk_payload=self.on_disk_payload,
+            vectors_config=VectorParams(
+                size=DEFAULT_EMBEDDING_SIZE, distance=Distance.COSINE, on_disk=self.on_disk_payload
+            ),
+            quantization_config=ScalarQuantizationConfig(type=ScalarType.INT8, always_ram=True),
         ):
             raise ConnectionError(f'Could not create {DEFAULT_QUOTE_COLLECTION} collection.')
         # create default index
         if not self.client.create_payload_index(
-                collection_name=DEFAULT_QUOTE_COLLECTION, field_name=DEFAULT_PAYLOAD_INDEX, field_type='keyword'
+            collection_name=DEFAULT_QUOTE_COLLECTION, field_name=DEFAULT_PAYLOAD_INDEX, field_type='keyword'
         ):
             raise ConnectionError(f'Could not create {DEFAULT_PAYLOAD_INDEX} index on {DEFAULT_QUOTE_COLLECTION}.')
 
     def upsert_quotes(
-            self,
-            quotes: list[QuoteItem],
-            embeddings: Sequence[list[float]],
-            collection_name: str = DEFAULT_QUOTE_COLLECTION,
-            wait: bool = True,
+        self,
+        quotes: list[QuoteItem],
+        embeddings: Sequence[list[float]],
+        collection_name: str = DEFAULT_QUOTE_COLLECTION,
+        wait: bool = True,
     ) -> UpdateStatus:
         """
         Method to upsert quotes to the vector store.
@@ -124,14 +134,15 @@ class QdrantVectorStore:
         # return status
         return response.status
 
+    # pylint: disable=too-many-arguments
     def get_content_based_recommendation(
-            self,
-            query_embedding: npt.NDArray[np.float64],
-            tags: Optional[list[str]] = None,
-            limit: int = 10,
-            score_threshold: Optional[float] = None,
-            collection: str = DEFAULT_QUOTE_COLLECTION,
-    ) -> list[Optional[ScoredPoint]]:
+        self,
+        query_embedding: npt.NDArray[np.float64],
+        tags: Optional[list[str]] = None,
+        limit: int = 10,
+        score_threshold: Optional[float] = None,
+        collection: str = DEFAULT_QUOTE_COLLECTION,
+    ) -> Optional[list[ScoredPoint]]:
         """
         Get content-based recommendations for the specified query.
         :param query_embedding: The encoded user search string.
@@ -164,11 +175,11 @@ class QdrantVectorStore:
         return hits
 
     def get_item_item_recommendations(
-            self,
-            negatives: Sequence[int],
-            positives: Optional[Sequence[int]] = None,
-            limit: int = 10,
-            collection: str = DEFAULT_QUOTE_COLLECTION
+        self,
+        negatives: Sequence[int],
+        positives: Optional[Sequence[int]] = None,
+        limit: int = 10,
+        collection: str = DEFAULT_QUOTE_COLLECTION,
     ) -> list[ScoredPoint]:
         """
         Use the Qdrant recommendations API to receive item-based recommendations.
@@ -186,16 +197,16 @@ class QdrantVectorStore:
             # TODO: get from pydantic model
             with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text']),
             strategy=RecommendStrategy.BEST_SCORE,
-            search_params=SearchParams(hnsw_ef=256, exact=True)
+            search_params=SearchParams(hnsw_ef=256, exact=True),
         )
         return recommendations
 
     def scroll_points(
-            self,
-            tags: Optional[list[str]] = None,
-            offset: Optional[int] = None,
-            limit: int = 20,
-            collection: str = DEFAULT_QUOTE_COLLECTION
+        self,
+        tags: Optional[list[str]] = None,
+        offset: Optional[int] = None,
+        limit: int = 20,
+        collection: str = DEFAULT_QUOTE_COLLECTION,
     ) -> tuple[list[Record], Optional[int | str | Any]]:
         """
         Scroll points from Qdrant.
@@ -207,14 +218,12 @@ class QdrantVectorStore:
         """
         points = self.client.scroll(
             collection_name=collection,
-            scroll_filter=Filter(
-                must=[FieldCondition(key='tags', match=MatchAny(any=tags))]
-            ) if tags else None,
+            scroll_filter=Filter(must=[FieldCondition(key='tags', match=MatchAny(any=tags))]) if tags else None,
             limit=limit,
             offset=offset,
             with_vectors=False,
             # TODO: get from pydantic model
-            with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text'])
+            with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text']),
         )
         # return points and next_page_offset
         return points[0], points[1]
@@ -230,6 +239,6 @@ class QdrantVectorStore:
             collection_name=collection,
             ids=ids,
             # TODO: get from pydantic model
-            with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text'])
+            with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text']),
         )
         return hits
