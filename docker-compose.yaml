@@ -29,9 +29,30 @@ services:
     volumes:
       - cache:/data
       - redis-data:/var/lib/redis/data
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf
     healthcheck:
       test: [ "CMD", "redis-cli","ping" ]
+      interval: 200s
+      timeout: 200s
+      retries: 5
 
+  streamlit:
+    container_name: frontend
+    build: ./
+    image: sagesnippetapp:latest
+    restart: on-failure
+    ports:
+      - '0.0.0.0:8501:8501'
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8051/_stcore/health"]
+      interval: 200s
+      timeout: 200s
+      retries: 5
+    depends_on:
+      - redis
+      - qdrant
+    env_file:
+      - local.env
 
 volumes:
   qdrant:
