@@ -31,12 +31,12 @@ class QuotesSpider(scrapy.Spider):
 
     def parse(self, response, **kwargs: Any) -> Generator[QuoteItem, None, None]:
         """Scraping through the alphabet regarding quotes"""
-        alpabeth = response.css(self.SELECTOR_AZ).getall()
-        for url in alpabeth:
+        alphabet = response.css(self.SELECTOR_AZ).getall()
+        for url in alphabet:
             yield response.follow(url=response.urljoin(url), callback=self.parse_pop_authors)
 
     def parse_pop_authors(self, response):
-        """Scraping popular athours from every letter"""
+        """Scraping popular authors from every letter"""
         authors = response.css(self.SELECTOR_POP_AUTHORS).getall()
 
         for url in authors:
