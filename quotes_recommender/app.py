@@ -31,10 +31,10 @@ st.set_page_config(
 show_pages_from_config()
 
 # set title and icon
-c1, c2 = st.columns([0.08, 0.92])
-with c1:
+img_col, title_col = st.columns([0.08, 0.92])
+with img_col:
     st.image(str(LOGO_PATH), width=40, use_column_width='auto')
-with c2:
+with title_col:
     st.title('SageSnippets')
 
 st.write('A Quote Recommender for Finding the Right Words to Express Your Thoughts')

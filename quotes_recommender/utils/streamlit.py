@@ -132,7 +132,7 @@ def display_quotes(
                 st.caption(f"Tags: {', '.join([tag.capitalize() for tag in quote.payload['tags']])}")
             # display image on right hand side
             with right_quote_col:
-                if (img_link := quote.payload['avatar_img']) is not None:
+                if img_link := quote.payload['avatar_img']:
                     st.image(img_link, use_column_width=True)
             if display_buttons:
                 # create unique keys for each checkbox
