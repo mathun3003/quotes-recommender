@@ -189,7 +189,7 @@ class QdrantVectorStore:
         query_embedding: npt.NDArray[np.float64],
         author: str,
         collection: str = DEFAULT_QUOTE_COLLECTION,
-    ) -> Optional[list[ScoredPoint]]:
+    ) -> Optional[ScoredPoint]:
         """
         Get entry with the same author based on similarity scores for the specified query.
         :param author: Author to match.
@@ -217,7 +217,4 @@ class QdrantVectorStore:
             score_threshold=0,
         )
         # return payload results
-        if result:
-            return result[0]
-        else:
-            return None
+        return result[0]
