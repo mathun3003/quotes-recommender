@@ -217,4 +217,7 @@ class QdrantVectorStore:
             score_threshold=0,
         )
         # return payload results
-        return result
+        if result:
+            return result[0]
+        else:
+            return None

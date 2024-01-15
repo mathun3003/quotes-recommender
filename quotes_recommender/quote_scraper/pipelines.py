@@ -30,8 +30,8 @@ class QuotesToQdrantPipeline:
         # Check existence of author with image
         author_name = item['data']['author']
         sim_author = self.vector_store.get_entry_by_author(query_embedding=embeddings, author=author_name)
-        if sim_author:
-            avatar_image = [scored_point.payload.get('avatar_img') for scored_point in sim_author]
+        if 'avatar_img' in sim_author.payload:
+            avatar_image = sim_author.payload.get('avatar_img')
             item['data']['avatar_img'] = avatar_image
         self.vector_store.upsert_quotes([item], [embeddings])
         return item
