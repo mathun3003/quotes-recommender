@@ -24,30 +24,40 @@ authenticator = stauth.Authenticate(
 )
 
 if st.session_state['authentication_status']:
-    # display logout button in sidebar
-    authenticator.logout('Logout', 'sidebar', key='logout_sidebar')
-
     # Display logged in user on sidebar
     st.sidebar.write(f"Logged in as {st.session_state['name']}")
-
+    authenticator.logout('Logout', 'sidebar', key='logout_sidebar')
     st.header('Your Preferences')
     st.subheader('Specify your interests')
     st.write(
         """
     In order to provide you the best possible recommendations, we need some information about your preferences and
     interests. Please consider the following quotes and specify at least five quotes you like and not like.
-    You can also filter by tags and/or authors to narrow down the displayed quotes.
+    You can also filter by tags or keywords to narrow down the displayed quotes.
     """
     )
     st.divider()
     with st.spinner('Loading filters...', cache=True):
         # select by tags
-        tags = st.multiselect(label="Filters", options=extract_tag_filters(), placeholder="Filter by tags.")
+        tags = st.multiselect(
+            label="Tags",
+            options=extract_tag_filters(),
+            help="Select one or multiple tags you would like to filter for.",
+            placeholder="Filter by tags.",
+        )
+        # search by keyword
+        keyword = st.text_input(
+            label="Keyword", help="Type in a keyword you would like to filter for.", placeholder="Filter by keyword."
+        )
     with st.spinner('Loading quotes...'):
         # get quotes from vector store
-        quotes, next_page_offset = vector_store.scroll_points(limit=10, tags=[tag.lower() for tag in tags])
+        quotes, _ = vector_store.scroll_points(limit=10, tags=[tag.lower() for tag in tags], keyword=keyword)
     # display quotes with buttons
     st.divider()
+    # if no results were found
+    if not quotes:
+        # display error message
+        st.info("❌ No quotes found for your filters. Please set different filters or remove some.")
     # get ratings (if any) for logged-in user
     likes, dislikes = user_store.get_user_preferences(st.session_state['username'])
     # construct UserPreference instances in order to display later

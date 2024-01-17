@@ -11,6 +11,7 @@ from qdrant_client.http.models import (
     FieldCondition,
     Filter,
     MatchAny,
+    MatchText,
     PayloadSelectorInclude,
     PointStruct,
     RecommendStrategy,
@@ -204,6 +205,7 @@ class QdrantVectorStore:
     def scroll_points(
         self,
         tags: Optional[list[str]] = None,
+        keyword: Optional[str] = None,
         offset: Optional[int] = None,
         limit: int = 20,
         collection: str = DEFAULT_QUOTE_COLLECTION,
@@ -211,14 +213,19 @@ class QdrantVectorStore:
         """
         Scroll points from Qdrant.
         :param tags: Tag filters.
+        :param keyword: Keyword filter.
         :param offset: Offset where to start.
         :param limit: Number of results.
         :param collection: Where to search for points.
         :return: Page results and next page offset.
         """
+        # search for points
         points = self.client.scroll(
             collection_name=collection,
-            scroll_filter=Filter(must=[FieldCondition(key='tags', match=MatchAny(any=tags))]) if tags else None,
+            scroll_filter=Filter(
+                must=[FieldCondition(key='tags', match=MatchAny(any=tags))] if tags else None,
+                should=[FieldCondition(key='text', match=MatchText(text=keyword))] if keyword else None,
+            ),
             limit=limit,
             offset=offset,
             with_vectors=False,

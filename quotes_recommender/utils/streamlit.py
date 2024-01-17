@@ -1,19 +1,14 @@
 import logging
-import platform
 from typing import Final, Optional, Sequence
 
 import requests
 import streamlit as st
-import torch
 from bs4 import BeautifulSoup
 from qdrant_client.http.models import Record, ScoredPoint
-from sentence_transformers import SentenceTransformer
 
-from quotes_recommender.core.constants import (
-    GOODREADS_QUOTES_URL,
-    SENTENCE_ENCODER_PATH,
-)
+from quotes_recommender.core.constants import GOODREADS_QUOTES_URL
 from quotes_recommender.core.models import UserPreference
+from quotes_recommender.ml_models.sentence_encoder import SentenceBERT
 from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
 
 user_store = RedisUserStoreSingleton().user_store
@@ -31,27 +26,13 @@ def switch_opposite_button(button_key: str) -> None:
 
 
 @st.cache_resource
-def load_sentence_bert() -> SentenceTransformer:
+def load_sentence_bert() -> SentenceBERT:
     """
     Loading the sentence encoder from path or from HF if not locally available.
     :return: None
     """
     with st.spinner("Preparing query encoding. Hang on, we hurry up!"):
-        sentence_bert = SentenceTransformer(str(SENTENCE_ENCODER_PATH))
-    # find device for encoding
-    # set default device
-    device: str | torch.device = 'cpu'
-    # check operating system
-    if operating_sys := platform.system() == 'Darwin':
-        # for Mac backends
-        if torch.cuda.is_available():
-            device = 'mps'
-    else:
-        if torch.cuda.is_available():
-            # other backends
-            device = 'cuda'
-
-    logger.info(f'Using {device} on {operating_sys} for encoding.')
+        sentence_bert = SentenceBERT()
     return sentence_bert
 
 
@@ -147,7 +128,7 @@ def display_quotes(
                         help="Yes, I want to see more like this!",
                         key=like_key,
                         on_change=switch_opposite_button,
-                        args=tuple(dislike_key),
+                        args=[dislike_key],  # type: ignore
                         value=like_value,
                     )
                     if like_btn:
@@ -159,7 +140,7 @@ def display_quotes(
                         help="Yuk, show me less like this!",
                         key=dislike_key,
                         on_change=switch_opposite_button,
-                        args=tuple(like_key),
+                        args=[like_key],  # type: ignore
                         value=dislike_value,
                     )
                     if dislike_btn:

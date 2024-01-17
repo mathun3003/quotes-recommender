@@ -38,11 +38,14 @@ services:
 
   streamlit:
     container_name: frontend
-    build: ./
     image: sagesnippetapp:latest
+    build: .
+    working_dir: /app
     restart: on-failure
     ports:
       - '0.0.0.0:8501:8501'
+    volumes:
+      - .:/app
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8051/_stcore/health"]
       interval: 200s
@@ -51,8 +54,6 @@ services:
     depends_on:
       - redis
       - qdrant
-    env_file:
-      - local.env
 
 volumes:
   qdrant:

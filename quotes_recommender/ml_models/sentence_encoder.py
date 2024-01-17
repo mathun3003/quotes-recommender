@@ -49,4 +49,4 @@ class SentenceBERT:
 
     def encode_quote(self, quote: str) -> npt.NDArray[np.float64]:
         """Encode a single quote by using the found device"""
-        return self._sentence_bert.encode(sentences=quote, device=self.device)
+        return self._sentence_bert.encode(sentences=quote, device=self.device, show_progress_bar=False)

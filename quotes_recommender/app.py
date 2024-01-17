@@ -18,8 +18,6 @@ try:
 except AttributeError:
     st.rerun()
 
-# TODO: add logging to streamlit app
-
 # set page config
 st.set_page_config(
     page_title='SageSnippets',
@@ -48,7 +46,7 @@ authenticator = stauth.Authenticate(
     key='authenticator-main-subpage',
 )
 
-login_tab, register_tab, forgot_password_tab = st.tabs(["Sign In", "Sign Up", "Reset Password"])
+login_tab, register_tab = st.tabs(["Sign In", "Sign Up"])
 
 # Sign In tab
 with login_tab:
@@ -187,14 +185,3 @@ with register_tab:
             st.write("You can now log in via the 'Sign In' tab.")
     except RegisterError as register_error:
         st.error(register_error.message)
-
-# Reset Password tab
-with forgot_password_tab:
-    # TODO: implement
-    username_of_forgotten_password, email_of_forgotten_password, new_random_password = authenticator.forgot_password(
-        'Forgot password'
-    )
-    if username_of_forgotten_password:
-        st.success('A new password has been sent to your email address 📫')
-    elif not email_of_forgotten_password and username_of_forgotten_password is not None:
-        st.error('Username not found')

@@ -1,5 +1,4 @@
 *
-quotes_recommender/quote_scraper
 !quotes_recommender
 !pyproject.toml
 !poetry.lock

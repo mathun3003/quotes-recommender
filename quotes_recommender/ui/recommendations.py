@@ -32,10 +32,8 @@ authenticator = stauth.Authenticate(
 
 if st.session_state['authentication_status']:
     # display logout button in sidebar
-    authenticator.logout('Logout', 'sidebar', key='logout_sidebar')
-
-    # Display logged in user on sidebar
     st.sidebar.write(f"Logged in as {st.session_state['name']}")
+    authenticator.logout('Logout', 'sidebar', key='logout_sidebar')
 
     st.header('Your Recommendations')
     st.write(
