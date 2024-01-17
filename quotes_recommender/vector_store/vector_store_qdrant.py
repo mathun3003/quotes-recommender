@@ -1,10 +1,22 @@
 import logging
-from typing import Any, Sequence
+from typing import Optional, Sequence
 
+import numpy as np
+import numpy.typing as npt
 import requests
 from qdrant_client import QdrantClient
+from qdrant_client.http import models
 from qdrant_client.http.exceptions import UnexpectedResponse
-from qdrant_client.http.models import Distance, PointStruct, UpdateStatus, VectorParams
+from qdrant_client.http.models import (
+    Distance,
+    FieldCondition,
+    Filter,
+    MatchAny,
+    PointStruct,
+    ScoredPoint,
+    UpdateStatus,
+    VectorParams,
+)
 from requests import HTTPError
 
 from quotes_recommender.quote_scraper.items import Quote
@@ -114,6 +126,95 @@ class QdrantVectorStore:
         # return status
         return response.status
 
-    def get_content_based_recommendation(self) -> Any:
-        """Get content-based recommendations"""
-        # TODO
+    # pylint: disable=too-many-arguments
+    def get_content_based_recommendation(
+        self,
+        query_embedding: npt.NDArray[np.float64],
+        tags: Optional[list[str]] = None,
+        limit: int = 10,
+        score_threshold: Optional[float] = None,
+        collection: str = DEFAULT_QUOTE_COLLECTION,
+    ) -> Optional[list[ScoredPoint]]:
+        """
+        Get content-based recommendations for the specified query.
+        :param query_embedding: The encoded user search string.
+        :param tags: Tags that should be used for searching. Only those quotes are returned that are assigned to one of
+        the specified tags (logical OR).
+        :param limit: Max number of results that should be returned.
+        :param score_threshold: Define a minimal score threshold for the result. If defined, less similar results will
+        not be returned.
+        :param collection: Collection used for the search.
+        :return: Payload results of the matching quotes.
+
+        Reference: https://qdrant.github.io/qdrant/redoc/index.html#tag/points/operation/search_points
+        """
+        # build the search query
+        hits = self.client.search(
+            collection_name=collection,
+            query_vector=query_embedding,
+            # fmt: off
+            query_filter=Filter(
+                # a quote must contain any of the specified tags to be considered a match
+                must=[FieldCondition(key='tags', match=MatchAny(any=tags))]  # TODO: get from pydantic model
+            ) if tags else None,
+            # fmt: on
+            limit=limit,
+            score_threshold=score_threshold,
+        )
+        # return payload results
+        return hits
+
+    def get_similarity_scores(self, query_embedding: npt.NDArray[np.float64]) -> Optional[list[ScoredPoint]]:
+        """
+        Get similarity scores for the specified query.
+        Used for determining tuples for data fusion.
+
+        :param query_embedding: Encoded quote to be checked for duplicate detection.
+        :param collection: Collection used for the search.
+        :return: Payload results of duplicate quotes.
+
+        Reference: https://qdrant.github.io/qdrant/redoc/index.html#tag/points/operation/search_points
+        """
+        dups = self.client.search(
+            collection_name=DEFAULT_QUOTE_COLLECTION,
+            query_vector=query_embedding,
+            limit=1,
+            score_threshold=0.9,
+        )
+        # return payload results
+        return dups
+
+    def get_entry_by_author(
+        self,
+        query_embedding: npt.NDArray[np.float64],
+        author: str,
+        collection: str = DEFAULT_QUOTE_COLLECTION,
+    ) -> Optional[ScoredPoint]:
+        """
+        Get entry with the same author based on similarity scores for the specified query.
+        :param author: Author to match.
+        :param query_embedding: Encoded quote to be checked for duplicate detection.
+        :param collection: Collection used for the search.
+        :return: Payload results of quotes with the same author.
+
+        Reference: https://qdrant.github.io/qdrant/redoc/index.html#tag/points/operation/search_points
+        """
+        # build the search query
+        result = self.client.search(
+            collection_name=collection,
+            query_vector=query_embedding,
+            # Add a condition to match the author
+            query_filter=models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key='author',
+                        match=models.MatchValue(
+                            value=author,
+                        ),
+                    )
+                ]
+            ),
+            score_threshold=0,
+        )
+        # return payload results
+        return result[0]
