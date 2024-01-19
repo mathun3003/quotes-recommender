@@ -1,10 +1,11 @@
 import logging
-from typing import Any, Optional, Sequence
+from typing import Optional, Optional, Sequence
 
 import numpy as np
 import numpy.typing as npt
 import requests
 from qdrant_client import QdrantClient
+from qdrant_client.http import models
 from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.http.models import (
     Distance,
@@ -249,3 +250,58 @@ class QdrantVectorStore:
             with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text']),
         )
         return hits
+
+    def get_similarity_scores(self, query_embedding: npt.NDArray[np.float64]) -> Optional[list[ScoredPoint]]:
+        """
+        Get similarity scores for the specified query.
+        Used for determining tuples for data fusion.
+
+        :param query_embedding: Encoded quote to be checked for duplicate detection.
+        :param collection: Collection used for the search.
+        :return: Payload results of duplicate quotes.
+
+        Reference: https://qdrant.github.io/qdrant/redoc/index.html#tag/points/operation/search_points
+        """
+        dups = self.client.search(
+            collection_name=DEFAULT_QUOTE_COLLECTION,
+            query_vector=query_embedding,
+            limit=1,
+            score_threshold=0.9,
+        )
+        # return payload results
+        return dups
+
+    def get_entry_by_author(
+        self,
+        query_embedding: npt.NDArray[np.float64],
+        author: str,
+        collection: str = DEFAULT_QUOTE_COLLECTION,
+    ) -> Optional[ScoredPoint]:
+        """
+        Get entry with the same author based on similarity scores for the specified query.
+        :param author: Author to match.
+        :param query_embedding: Encoded quote to be checked for duplicate detection.
+        :param collection: Collection used for the search.
+        :return: Payload results of quotes with the same author.
+
+        Reference: https://qdrant.github.io/qdrant/redoc/index.html#tag/points/operation/search_points
+        """
+        # build the search query
+        result = self.client.search(
+            collection_name=collection,
+            query_vector=query_embedding,
+            # Add a condition to match the author
+            query_filter=models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key='author',
+                        match=models.MatchValue(
+                            value=author,
+                        ),
+                    )
+                ]
+            ),
+            score_threshold=0,
+        )
+        # return payload results
+        return result[0]
