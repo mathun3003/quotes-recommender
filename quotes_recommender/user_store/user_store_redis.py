@@ -96,9 +96,10 @@ class RedisUserStore:
         all_users = self._get_all_users()
         similar_users = []
         for other_user, data in all_users.items():
+            compared_user = other_user.split(':')[1] if len(other_user.split(':')) == 4 else ''
             intersection_list = list(set(current_user_preferences).intersection(data))
-            if (f'user:{user}:preferences:like' != other_user) and (len(intersection_list) >= threshold):
-                similar_users.append({other_user: data})
+            if (user != compared_user) and (len(intersection_list) >= threshold):
+                similar_users.append({compared_user: data})
         max_user = max(similar_users, key=lambda x: len(list(x.values())[0]))
         most_similar_user = next(iter(max_user))
 
