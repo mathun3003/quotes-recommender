@@ -51,7 +51,7 @@ if st.session_state['authentication_status']:
         st.info("🔔 You have not specified any preferences. Please specify any on the 'Set Preferences' page.")
         st.stop()
     else:
-        # get recommendations
+        # get item-item recommendations
         recommendations = vector_store.get_item_item_recommendations(positives=likes, negatives=dislikes)
         display_quotes(recommendations)
 else:
