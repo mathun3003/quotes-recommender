@@ -21,7 +21,7 @@ class QuotesToQdrantPipeline:
 
     def process_item(self, item, spider):
         """Process a quote item and upsert the quote into the Qdrant vector store.
-        :param item (dict): An item containing quote data.
+        :param item: An item containing quote data.
         :param spider: The Scrapy spider instance.
         """
         embeddings = model.encode_quote(item['data']['quote'])
@@ -48,7 +48,8 @@ class QuotesToQdrantPipeline:
     def close_spider(self, spider) -> None:
         """Close the spider.
         Registers user preferences in Redis of scraped users.
-        :param Scrapy spider instance.
+        :param spider: Scrapy spider instance
+        :return None
         """
         # get number of available points in Qdrant
         count = self.vector_store.get_point_count()
@@ -56,8 +57,9 @@ class QuotesToQdrantPipeline:
         offset: int = 0
         # scroll all points
         while count != 0:
-            page_results, next_offset = self.vector_store.scroll_points(payload_attributes=['liking_users'],
-                                                                        limit=50, offset=offset)
+            page_results, next_offset = self.vector_store.scroll_points(
+                payload_attributes=['liking_users'], limit=50, offset=offset
+            )
             for point in page_results:
                 # get point ID
                 point_id = point.payload.get('id', None)
@@ -65,3 +67,7 @@ class QuotesToQdrantPipeline:
                 user_ids = [user.get('user_id', None) for user in point.payload.get('liking_users', None)]
                 # store user preferences
                 self.user_store.store_batch_likes(user_ids=user_ids, quote_id=point_id)
+
+            # increment offset and reduce counter
+            offset += next_offset
+            count -= len(page_results.payload)
