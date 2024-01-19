@@ -84,7 +84,7 @@ class RedisUserStore:
 
         return users_data
 
-    def get_most_similar_users(self, user: str, threshold: int = DEFAULT_SIMILAR_PREFERENCE) -> str:
+    def get_most_similar_user(self, user: str, threshold: int = DEFAULT_SIMILAR_PREFERENCE) -> str:
         """
         Get users with similar preferences to the given user.
 
@@ -98,7 +98,7 @@ class RedisUserStore:
         for other_user, data in all_users.items():
             intersection_list = list(set(current_user_preferences).intersection(data))
             if (f'user:{user}:preferences:like' != other_user) and (len(intersection_list) >= threshold):
-                similar_users.append({other_user:data})
+                similar_users.append({other_user: data})
         max_user = max(similar_users, key=lambda x: len(list(x.values())[0]))
         most_similar_user = next(iter(max_user))
 
