@@ -62,7 +62,7 @@ class RedisUserStore:
         hits = self._client.scan(cursor=cursor, match=search_str, count=batch_size, _type=type_filter)
         return [hit.decode(TXT_ENCODING) for hit in hits[1]]
 
-    def get_all_users(
+    def _get_all_users(
         self,
         search_str: Optional[str] = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
@@ -84,7 +84,7 @@ class RedisUserStore:
 
         return users_data
 
-    def get_most_similar_user(self, user: str, threshold: int = DEFAULT_SIMILAR_PREFERENCE) -> list[str]:
+    def get_most_similar_users(self, user: str, threshold: int = DEFAULT_SIMILAR_PREFERENCE) -> str:
         """
         Get users with similar preferences to the given user.
 
@@ -93,15 +93,16 @@ class RedisUserStore:
         :return: List of usernames for users with similar preferences.
         """
         current_user_preferences = self.get_user_preferences(user)[0]
-        all_users = self.get_all_users()
+        all_users = self._get_all_users()
         similar_users = []
-
         for other_user, data in all_users.items():
             intersection_list = list(set(current_user_preferences).intersection(data))
-            if len(intersection_list) >= threshold:
-                similar_users.append(other_user)
+            if (f'user:{user}:preferences:like' != other_user) and (len(intersection_list) >= threshold):
+                similar_users.append({other_user:data})
+        max_user = max(similar_users, key=lambda x: len(list(x.values())[0]))
+        most_similar_user = next(iter(max_user))
 
-        return similar_users
+        return most_similar_user
 
     def get_user_credentials(self) -> dict[Any, Any]:
         """
