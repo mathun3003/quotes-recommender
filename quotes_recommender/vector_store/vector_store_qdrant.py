@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Optional, Sequence
+from typing import Optional, Optional, Sequence, Any
 
 import numpy as np
 import numpy.typing as npt
@@ -22,7 +22,7 @@ from qdrant_client.http.models import (
     ScoredPoint,
     SearchParams,
     UpdateStatus,
-    VectorParams,
+    VectorParams, CountResult,
 )
 from requests import HTTPError
 
@@ -205,6 +205,7 @@ class QdrantVectorStore:
 
     def scroll_points(
         self,
+        payload_attributes: list[str],
         tags: Optional[list[str]] = None,
         keyword: Optional[str] = None,
         offset: Optional[int] = None,
@@ -213,6 +214,7 @@ class QdrantVectorStore:
     ) -> tuple[list[Record], Optional[int | str | Any]]:
         """
         Scroll points from Qdrant.
+        :param payload_attributes: Which payload attributes to return for each point
         :param tags: Tag filters.
         :param keyword: Keyword filter.
         :param offset: Offset where to start.
@@ -231,10 +233,20 @@ class QdrantVectorStore:
             offset=offset,
             with_vectors=False,
             # TODO: get from pydantic model
-            with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text']),
+            with_payload=PayloadSelectorInclude(include=payload_attributes),
         )
         # return points and next_page_offset
         return points[0], points[1]
+
+    def get_point_count(self, collection: str = DEFAULT_QUOTE_COLLECTION) -> int:
+        """
+        Get the exact number of points for the given collection.
+        :param collection: Collection name.
+        :return: Number of exact point count.
+        """
+        # get count
+        count: CountResult = self.client.count(collection_name=collection, exact=True)
+        return count.count
 
     def search_points(self, ids: Sequence[int | str], collection: str = DEFAULT_QUOTE_COLLECTION) -> list[Record]:
         """

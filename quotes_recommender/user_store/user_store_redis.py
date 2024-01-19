@@ -109,6 +109,20 @@ class RedisUserStore:
             list(map(lambda x: int(x.decode(TXT_ENCODING)), dislikes)),
         )
 
+    def store_batch_likes(self, user_ids: Sequence[str], quote_id: str | int) -> None:
+        """
+        Stores the likes of several users for a given quote ID in Redis.
+        :param user_ids: List of user IDs.
+        :param quote_id: The ID of the quote (point) which should be stored for each user.
+        :return: None
+        """
+        hash_keys: list[str] = [PreferenceKey(username=user_id).like_key for user_id in user_ids]
+        with self._client.pipeline() as pipe:
+            for hash_key in hash_keys:
+                pipe.sadd(name=hash_key, *quote_id)
+            pipe.execute()
+            pipe.close()
+
     def set_user_preferences(
         self,
         username: str,
