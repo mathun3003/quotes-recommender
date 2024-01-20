@@ -69,7 +69,7 @@ class RedisUserStore:
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> dict[str, list[int]]:
         """
-        Use SSCAN function to receive key-value results for a search string.
+        Receive key-value results for for all users.
         :param search_str: Search string.
         :param batch_size: Number of returned results.
         :return: Dictionary mapping each key to a list of its members
@@ -88,7 +88,6 @@ class RedisUserStore:
     def get_most_similar_user(self, user: str, threshold: int = DEFAULT_SIMILAR_PREFERENCE) -> Sequence[object]:
         """
         Get users with similar preferences to the given user.
-
         :param user: The username of the user for whom similar users are to be found.
         :param threshold: Minimum number of common preferences to consider a user similar.
         :return: List of usernames for users with similar preferences.
