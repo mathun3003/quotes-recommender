@@ -42,27 +42,6 @@ class RedisUserStore:
                 raise ConnectionError("Cannot connect to Redis.")
             logger.info('Connected to Redis.')
 
-    def scan(
-        self,
-        search_str: Optional[str] = None,
-        batch_size: int = DEFAULT_BATCH_SIZE,
-        type_filter: Optional[str] = None,
-        cursor: int = 0,
-    ) -> list[Any]:
-        """
-        Use SCAN function to receive key-value results for a search string or type filter.
-        :param search_str: Search string.
-        :param batch_size: Number of returned results.
-        :param type_filter: Filter by redis data types.
-        :param cursor: Offset where to start searching.
-        :return: Generator object yielding batched results
-
-        References:
-            - https://redis.io/docs/interact/search-and-query/query/#mapping-common-sql-predicates-to-search-and-query
-        """
-        hits = self._client.scan(cursor=cursor, match=search_str, count=batch_size, _type=type_filter)
-        return [hit.decode(TXT_ENCODING) for hit in hits[1]]
-
     def _get_all_users(
         self,
         search_str: Optional[str] = None,
@@ -122,12 +101,10 @@ class RedisUserStore:
         """
         # init dict for credentials
         user_credentials: dict[Any, Any] = {}
-        # get all usernames
-        credential_hashes: list[str] = self.scan(type_filter='hash')
         # get credentials for every username
-        for credential_hash in credential_hashes:
+        for credential_hash in self._client.scan_iter(match='user:*:credentials', _type='hash'):
             # extract username from hash key
-            username: str = credential_hash.split(':')[1]
+            username: str = credential_hash.decode(TXT_ENCODING).split(':')[1]
             user_credentials[username] = {
                 # get corresponding credentials
                 key.decode(TXT_ENCODING): value.decode(TXT_ENCODING)
@@ -165,17 +142,41 @@ class RedisUserStore:
             list(map(lambda x: int(x.decode(TXT_ENCODING)), dislikes)),
         )
 
-    def store_batch_likes(self, user_ids: Sequence[str], quote_id: str | int) -> None:
+    def store_likes_batch(self, user_ids: Sequence[str], quote_id: str | int) -> None:
         """
         Stores the likes of several users for a given quote ID in Redis.
         :param user_ids: List of user IDs.
         :param quote_id: The ID of the quote (point) which should be stored for each user.
         :return: None
         """
+        # create hash keys from user ids
         hash_keys: list[str] = [PreferenceKey(username=str(user_id)).like_key for user_id in user_ids]
         with self._client.pipeline() as pipe:
             for hash_key in hash_keys:
                 pipe.sadd(hash_key, quote_id)
+            pipe.execute()
+            pipe.close()
+
+    def clean_up_user_store(self, threshold: int = DEFAULT_SIMILAR_PREFERENCE) -> None:
+        """
+        Cleans the user store by removing all sets having less than a specified number of elements.
+        :param threshold: The minimum set size
+        :return: None
+        """
+        # get all user sets
+        user_data_all = self._get_all_users(search_str='user:*:preferences:like')
+        # get registered users
+        registered_users = list(self.get_user_credentials().keys())
+        user_data_filtered = {key: value for key, value in user_data_all.items() if key not in registered_users}
+        with self._client.pipeline() as pipe:
+            # iter over all sets (except the one for the registered users)
+            for username, like_set in user_data_filtered.items():
+                # if the user has less than N likes
+                if len(like_set) < threshold:
+                    # re-construct hask key
+                    hash_key: str = PreferenceKey(username=username).like_key
+                    # delete key
+                    pipe.delete(hash_key)
             pipe.execute()
             pipe.close()
 

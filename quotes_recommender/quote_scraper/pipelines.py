@@ -67,7 +67,10 @@ class QuotesToQdrantPipeline:
                     # collect each user ID
                     user_ids = [user.get('user_id', None) for user in point.payload.get('liking_users', None)]
                     # store user preferences
-                    self.user_store.store_batch_likes(user_ids=user_ids, quote_id=point_id)
+                    self.user_store.store_likes_batch(user_ids=user_ids, quote_id=point_id)
 
                 # reset offset
                 offset = next_offset
+
+            # remove those sets that consist of less than N records
+            self.user_store.clean_up_user_store()
