@@ -1,7 +1,7 @@
 import json
 import logging
 
-from quotes_recommender.core.constants import TAG_MAPPING_PATH
+from quotes_recommender.core.constants import TAG_MAPPING_PATH, TXT_ENCODING
 from quotes_recommender.ml_models.sentence_encoder import SentenceBERT
 from quotes_recommender.vector_store.vector_store_singleton import (
     QdrantVectorStoreSingleton,
@@ -14,12 +14,10 @@ model = SentenceBERT()
 class QuotesToQdrantPipeline:
     """Scrapy Quotes Pipeline"""
 
-    with open(TAG_MAPPING_PATH, 'r', encoding='utf-8') as file:
-        tag_mappings = json.load(file)
-
     def __init__(self):
         """Initialize the pipeline."""
         self.vector_store = None
+        self.tag_mappings = None
 
     def process_item(self, item, spider):  # pylint: disable=unused-argument
         """Process a quote item and upsert the quote into the Qdrant vector store.
@@ -28,8 +26,8 @@ class QuotesToQdrantPipeline:
         """
         embeddings = model.encode_quote(item['data']['quote'])
         dups = self.vector_store.get_similarity_scores(query_embedding=embeddings)
+        # Check for duplicates
         if dups:
-            # Check for duplicates
             logger.warning("####### Duplicate found #######")
             return item
         # Check existence of author with image
@@ -49,6 +47,9 @@ class QuotesToQdrantPipeline:
         :param spider: The Scrapy spider instance.
         """
         self.vector_store = QdrantVectorStoreSingleton().vector_store
+        with open(TAG_MAPPING_PATH, 'r', encoding=TXT_ENCODING) as file:
+            self.tag_mappings = json.load(file)
+        file.close()
 
     def close_spider(self, spider) -> None:  # pylint: disable=unused-argument
         """Close the spider.
@@ -56,5 +57,3 @@ class QuotesToQdrantPipeline:
         :param The Scrapy spider instance.
         """
         # Optionally, add cleanup code here
-
-    file.close()
