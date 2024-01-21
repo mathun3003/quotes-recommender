@@ -7,7 +7,7 @@ from yarl import URL
 TXT_ENCODING: Final[str] = 'utf-8'
 
 # URLs
-GOODREADS_QUOTES_URL: Final[URL] = URL("https://www.goodreads.com/")
+GOODREADS_QUOTES_URL: Final[URL] = URL("https://www.goodreads.com/quotes")
 
 # Paths
 DATA_PATH: Final[Path] = Path('data')
