@@ -3,7 +3,7 @@ from typing import Any, Final, Generator
 
 import scrapy
 
-from quotes_recommender.quote_scraper.items import Quote, QuoteData
+from quotes_recommender.quote_scraper.items import QuoteData, QuoteItem
 
 
 class QuotesSpider(scrapy.Spider):
@@ -29,14 +29,14 @@ class QuotesSpider(scrapy.Spider):
         url = "https://www.azquotes.com/quotes/authors/a/"
         yield scrapy.Request(url=url, callback=self.parse)
 
-    def parse(self, response, **kwargs: Any) -> Generator[Quote, None, None]:
+    def parse(self, response, **kwargs: Any) -> Generator[QuoteItem, None, None]:
         """Scraping through the alphabet regarding quotes"""
-        alpabeth = response.css(self.SELECTOR_AZ).getall()
-        for url in alpabeth:
+        alphabet = response.css(self.SELECTOR_AZ).getall()
+        for url in alphabet:
             yield response.follow(url=response.urljoin(url), callback=self.parse_pop_authors)
 
     def parse_pop_authors(self, response):
-        """Scraping popular athours from every letter"""
+        """Scraping popular authors from every letter"""
         authors = response.css(self.SELECTOR_POP_AUTHORS).getall()
 
         for url in authors:
@@ -51,7 +51,7 @@ class QuotesSpider(scrapy.Spider):
             if id_number is None:
                 continue
 
-            quote_result = Quote.model_construct(
+            quote_result = QuoteItem.model_construct(
                 id=int(id_number),
                 data=QuoteData.model_construct(
                     author=quote.css(self.SELECTOR_AUTHOR).get(),

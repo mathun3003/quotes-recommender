@@ -2,5 +2,11 @@
 !quotes_recommender
 !pyproject.toml
 !poetry.lock
-!.gitignore
 !config
+!data
+!local.env
+!resources
+!.streamlit
+
+**/.DS_Store
+**/__pycache__

@@ -13,7 +13,7 @@ from quotes_recommender.utils.singleton import Singleton
 logger = logging.getLogger(__name__)
 
 
-class SentenceBERTSingleton(Singleton):  # pylint: disable=too-few-public-methods
+class SentenceBERTSingleton(Singleton):
     """Class loading the SentenceBERT model"""
 
     def init(self, *args: Any, **kwargs: Any) -> None:  # pylint: disable=unused-argument
@@ -26,7 +26,7 @@ class SentenceBERTSingleton(Singleton):  # pylint: disable=too-few-public-method
         self.model = SentenceBERT()
 
 
-class SentenceBERT:  # pylint: disable=too-few-public-methods
+class SentenceBERT:
     """Class encapsulating the SentenceBERT model."""
 
     def __init__(self) -> None:
@@ -49,4 +49,4 @@ class SentenceBERT:  # pylint: disable=too-few-public-methods
 
     def encode_quote(self, quote: str) -> npt.NDArray[np.float64]:
         """Encode a single quote by using the found device"""
-        return self._sentence_bert.encode(sentences=quote, device=self.device)
+        return self._sentence_bert.encode(sentences=quote, device=self.device, show_progress_bar=False)

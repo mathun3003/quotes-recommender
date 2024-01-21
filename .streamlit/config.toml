@@ -1,0 +1,19 @@
+[theme]
+font="serif"
+primaryColor="#25bbbc"
+base="light"
+
+[logger]
+level = "info"
+messageFormat = "%(asctime)s %(message)s"
+
+[client]
+toolbarMode = "auto"
+showErrorDetails = true
+
+[server]
+port = 8501
+baseUrlPath = "sagesnippets"
+
+[browser]
+serverPort = 8501

@@ -5,7 +5,7 @@ from quotes_recommender.utils.singleton import Singleton
 from quotes_recommender.vector_store.vector_store_qdrant import QdrantVectorStore
 
 
-class QdrantVectorStoreSingleton(Singleton):  # pylint: disable=too-few-public-methods
+class QdrantVectorStoreSingleton(Singleton):
     """Singleton class for Qdrant database"""
 
     def init(self, *args: Any, **kwargs: Any) -> None:  # pylint: disable=unused-argument

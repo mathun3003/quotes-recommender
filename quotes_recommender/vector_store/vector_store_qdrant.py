@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Sequence
+from typing import Any, Optional, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -12,14 +12,21 @@ from qdrant_client.http.models import (
     FieldCondition,
     Filter,
     MatchAny,
+    MatchText,
+    PayloadSelectorInclude,
     PointStruct,
+    RecommendStrategy,
+    Record,
+    ScalarQuantizationConfig,
+    ScalarType,
     ScoredPoint,
+    SearchParams,
     UpdateStatus,
     VectorParams,
 )
 from requests import HTTPError
 
-from quotes_recommender.quote_scraper.items import Quote
+from quotes_recommender.quote_scraper.items import ExtendedQuoteData, QuoteItem
 from quotes_recommender.utils.qdrant import QdrantConfig
 from quotes_recommender.vector_store.constants import (
     DEFAULT_EMBEDDING_SIZE,
@@ -58,12 +65,15 @@ class QdrantVectorStore:
 
         # test connection
         if ping:
-            # use workaround instead of service API as it contains a bug
-            response = requests.get(
-                f'{qdrant_config.https_url if qdrant_config.use_https else qdrant_config.http_url}/healthz', timeout=60
-            )
-            if not response.ok:
-                raise ConnectionError("Cannot connect to Qdrant. Is the database running?")
+            try:
+                # use workaround instead of service API as it contains a bug
+                requests.get(
+                    f'{qdrant_config.https_url if qdrant_config.use_https else qdrant_config.http_url}/healthz',
+                    timeout=60,
+                )
+            except ConnectionError as exc:
+                logger.error("Cannot connect to Qdrant. Is the database running?")
+                raise exc
             logger.info('Connected to Qdrant.')
 
         try:
@@ -77,7 +87,6 @@ class QdrantVectorStore:
         Creates a default collection and payload index.
         :return: None
         """
-        # TODO: create HNSW index (?)
         # create default collection
         if not self.client.create_collection(
             collection_name=DEFAULT_QUOTE_COLLECTION,
@@ -85,6 +94,7 @@ class QdrantVectorStore:
             vectors_config=VectorParams(
                 size=DEFAULT_EMBEDDING_SIZE, distance=Distance.COSINE, on_disk=self.on_disk_payload
             ),
+            quantization_config=ScalarQuantizationConfig(type=ScalarType.INT8, always_ram=True),
         ):
             raise ConnectionError(f'Could not create {DEFAULT_QUOTE_COLLECTION} collection.')
         # create default index
@@ -95,7 +105,7 @@ class QdrantVectorStore:
 
     def upsert_quotes(
         self,
-        quotes: list[Quote],
+        quotes: list[QuoteItem],
         embeddings: Sequence[list[float]],
         collection_name: str = DEFAULT_QUOTE_COLLECTION,
         wait: bool = True,
@@ -160,8 +170,85 @@ class QdrantVectorStore:
             # fmt: on
             limit=limit,
             score_threshold=score_threshold,
+            # only select relevant payload fields
+            with_payload=PayloadSelectorInclude(include=list(ExtendedQuoteData.model_fields.keys())),
         )
         # return payload results
+        return hits
+
+    def get_item_item_recommendations(
+        self,
+        negatives: Sequence[int],
+        positives: Optional[Sequence[int]] = None,
+        limit: int = 10,
+        collection: str = DEFAULT_QUOTE_COLLECTION,
+    ) -> list[ScoredPoint]:
+        """
+        Use the Qdrant recommendations API to receive item-based recommendations.
+        :param positives: IDs of positive examples to search for.
+        :param negatives: IDs of negative examples to avoid.
+        :param limit: Number of results.
+        :param collection: Where to search for points.
+        :return: List of recommendations.
+        """
+        recommendations = self.client.recommend(
+            collection_name=collection,
+            positive=positives,
+            negative=negatives,
+            limit=limit,
+            # TODO: get from pydantic model
+            with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text']),
+            strategy=RecommendStrategy.BEST_SCORE,
+            search_params=SearchParams(hnsw_ef=256, exact=True),
+        )
+        return recommendations
+
+    def scroll_points(
+        self,
+        tags: Optional[list[str]] = None,
+        keyword: Optional[str] = None,
+        offset: Optional[int] = None,
+        limit: int = 20,
+        collection: str = DEFAULT_QUOTE_COLLECTION,
+    ) -> tuple[list[Record], Optional[int | str | Any]]:
+        """
+        Scroll points from Qdrant.
+        :param tags: Tag filters.
+        :param keyword: Keyword filter.
+        :param offset: Offset where to start.
+        :param limit: Number of results.
+        :param collection: Where to search for points.
+        :return: Page results and next page offset.
+        """
+        # search for points
+        points = self.client.scroll(
+            collection_name=collection,
+            scroll_filter=Filter(
+                must=[FieldCondition(key='tags', match=MatchAny(any=tags))] if tags else None,
+                should=[FieldCondition(key='text', match=MatchText(text=keyword))] if keyword else None,
+            ),
+            limit=limit,
+            offset=offset,
+            with_vectors=False,
+            # TODO: get from pydantic model
+            with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text']),
+        )
+        # return points and next_page_offset
+        return points[0], points[1]
+
+    def search_points(self, ids: Sequence[int | str], collection: str = DEFAULT_QUOTE_COLLECTION) -> list[Record]:
+        """
+        Searching points by IDs.
+        :param ids: List or sequence of point IDs.
+        :param collection: Where to search for points.
+        :return: Points with payloads.
+        """
+        hits = self.client.retrieve(
+            collection_name=collection,
+            ids=ids,
+            # TODO: get from pydantic model
+            with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text']),
+        )
         return hits
 
     def get_similarity_scores(self, query_embedding: npt.NDArray[np.float64]) -> Optional[list[ScoredPoint]]:
