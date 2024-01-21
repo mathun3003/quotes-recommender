@@ -15,7 +15,7 @@ class GoodreadsSpider(scrapy.Spider):
 
     name = 'goodreads-spider'
     allowed_domains = [GOODREADS_QUOTES_URL.raw_host]
-    start_urls = [GOODREADS_QUOTES_URL]
+    start_urls = [str(GOODREADS_QUOTES_URL)]
 
     # CSS filter masks
     QUOTE_SELECTOR: Final[str] = 'div.quote'
