@@ -248,19 +248,28 @@ class QdrantVectorStore:
         count: CountResult = self.client.count(collection_name=collection, exact=True)
         return count.count
 
-    def search_points(self, ids: Sequence[int | str], collection: str = DEFAULT_QUOTE_COLLECTION) -> list[Record]:
+    def search_points(
+        self, ids: Sequence[int | str], collection: str = DEFAULT_QUOTE_COLLECTION, limit: Optional[int] = None
+    ) -> list[Record]:
         """
         Searching points by IDs.
         :param ids: List or sequence of point IDs.
         :param collection: Where to search for points.
+        :param limit: The number of points that should be returned. If nothing is provided, all requested points
+        are returned.
         :return: Points with payloads.
         """
+        # get points from qdrant
         hits = self.client.retrieve(
             collection_name=collection,
             ids=ids,
             # TODO: get from pydantic model
             with_payload=PayloadSelectorInclude(include=['author', 'avatar_img', 'tags', 'text']),
         )
+        # if limit was provided
+        if limit:
+            # get only first N elements
+            hits = hits[:limit]
         return hits
 
     def get_similarity_scores(self, query_embedding: npt.NDArray[np.float64]) -> Optional[list[ScoredPoint]]:

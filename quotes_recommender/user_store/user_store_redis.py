@@ -69,40 +69,50 @@ class RedisUserStore:
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> dict[str, list[int]]:
         """
-        Receive key-value results for for all users.
+        Receive key-value results for all users.
         :param search_str: Search string.
         :param batch_size: Number of returned results.
-        :return: Dictionary mapping each key to a list of its members
+        :return: Dictionary mapping each username to a list of its set members
 
         References:
             - https://redis-py.readthedocs.io/en/stable/#redis.Redis.scan_iter
         """
+        # init user data dict
         users_data = {}
+        # iterate over each key matching the search string
         for key in self._client.scan_iter(match=search_str, count=batch_size):
+            # decode key
             key_str = key.decode(TXT_ENCODING)
-            members = [int(member.decode(TXT_ENCODING)) for member in self._client.smembers(key_str)]
-            users_data[key_str] = members
-
+            # parse set members
+            members = list(map(lambda member: int(member.decode(TXT_ENCODING)), self._client.smembers(key_str)))
+            # get username from hash key
+            username: str = key_str.split(':')[1]
+            # add results to users data dict
+            users_data[username] = members
+        # return dict
         return users_data
 
-    def get_most_similar_user(self, user: str, threshold: int = DEFAULT_SIMILAR_PREFERENCE) -> Sequence[object]:
+    def get_most_similar_user(self, user: str, threshold: int = DEFAULT_SIMILAR_PREFERENCE) -> Optional[str]:
         """
-        Get users with similar preferences to the given user.
+        Get user with most similar preferences to the given user based on set intersection.
         :param user: The username of the user for whom similar users are to be found.
         :param threshold: Minimum number of common preferences to consider a user similar.
-        :return: List of usernames for users with similar preferences.
+        :return: username for user with most similar preferences.
         """
         current_user_preferences = self.get_user_preferences(user)[0]
-        all_users = self._get_all_users()
+        all_users = self._get_all_users(search_str='user:*:preferences:like')
         similar_users = {}
         for other_user, data in all_users.items():
-            compared_user = other_user.split(':')[1] if len(other_user.split(':')) == 4 else ''
             intersection_list = list(set(current_user_preferences).intersection(data))
-            if (user != compared_user) and (len(intersection_list) >= threshold):
-                similar_users[compared_user] = data
-        max_user = max(similar_users.items(), key=operator.itemgetter(1))
-        most_similar_user = next(iter(max_user))
-
+            if (user != other_user) and (len(intersection_list) >= threshold):
+                similar_users[other_user] = data
+        # if no similar users were found
+        if not similar_users:
+            return None
+        # get user with the greatest set intersection
+        most_similar_user = max(similar_users.items(), key=operator.itemgetter(1))[0]
+        # most_similar_user = next(iter(max_user))
+        # return username of most similar user
         return most_similar_user
 
     def get_user_credentials(self) -> dict[Any, Any]:
