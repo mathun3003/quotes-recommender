@@ -303,5 +303,4 @@ class QdrantVectorStore:
         # return payload results
         if result:
             return result[0]
-        else:
-            return None
+        return None
