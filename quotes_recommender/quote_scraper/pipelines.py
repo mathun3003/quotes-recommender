@@ -1,5 +1,5 @@
-import logging
 import json
+import logging
 
 from quotes_recommender.core.constants import TAG_MAPPING_PATH
 from quotes_recommender.ml_models.sentence_encoder import SentenceBERT
@@ -14,8 +14,8 @@ model = SentenceBERT()
 class QuotesToQdrantPipeline:
     """Scrapy Quotes Pipeline"""
 
-    file = open(TAG_MAPPING_PATH, 'r')
-    tag_mappings = json.load(file)
+    with open(TAG_MAPPING_PATH, 'r', encoding='utf-8') as file:
+        tag_mappings = json.load(file)
 
     def __init__(self):
         """Initialize the pipeline."""
@@ -37,10 +37,10 @@ class QuotesToQdrantPipeline:
         sim_author = self.vector_store.get_entry_by_author(query_embedding=embeddings, author=author_name)
         avatar_image = sim_author.payload.get('avatar_img', None)
         item['data']['avatar_img'] = avatar_image
-        #Check for tag mappings
+        # Check for tag mappings
         mapped_tags = [self.tag_mappings.get(tag, tag) for tag in item['data']['tags']]
         item['data']['tags'] = list(set(mapped_tags))
-        self.vector_store.upsert_quotes([item], [embeddings])
+        # self.vector_store.upsert_quotes([item], [embeddings])
         return item
 
     def open_spider(self, spider) -> None:  # pylint: disable=unused-argument
@@ -55,4 +55,5 @@ class QuotesToQdrantPipeline:
         :param The Scrapy spider instance.
         """
         # Optionally, add cleanup code here
+
     file.close()
