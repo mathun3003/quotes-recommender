@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Optional, Sequence, Any
+from typing import Any, Optional, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -8,6 +8,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.http.models import (
+    CountResult,
     Distance,
     FieldCondition,
     Filter,
@@ -22,7 +23,7 @@ from qdrant_client.http.models import (
     ScoredPoint,
     SearchParams,
     UpdateStatus,
-    VectorParams, CountResult,
+    VectorParams,
 )
 from requests import HTTPError
 

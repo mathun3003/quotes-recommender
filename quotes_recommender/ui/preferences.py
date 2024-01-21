@@ -52,8 +52,12 @@ if st.session_state['authentication_status']:
     with st.spinner('Loading quotes...'):
         # get quotes from vector store
         # TODO: get from pydantic model
-        quotes, _ = vector_store.scroll_points(payload_attributes=['author', 'avatar_img', 'tags', 'text'],
-                                               limit=10, tags=[tag.lower() for tag in tags], keyword=keyword)
+        quotes, _ = vector_store.scroll_points(
+            payload_attributes=['author', 'avatar_img', 'tags', 'text'],
+            limit=10,
+            tags=[tag.lower() for tag in tags],
+            keyword=keyword,
+        )
     # display quotes with buttons
     st.divider()
     # if no results were found
