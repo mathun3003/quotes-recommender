@@ -1,11 +1,15 @@
 import itertools
 import logging
+import operator
 from typing import Any, Mapping, Optional, Sequence
 
 import redis
 
 from quotes_recommender.core.constants import TXT_ENCODING
-from quotes_recommender.user_store.constants import DEFAULT_BATCH_SIZE
+from quotes_recommender.user_store.constants import (
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_SIMILAR_PREFERENCE,
+)
 from quotes_recommender.user_store.models import CredentialsKey, PreferenceKey
 from quotes_recommender.utils.redis import RedisConfig
 
@@ -58,6 +62,48 @@ class RedisUserStore:
         """
         hits = self._client.scan(cursor=cursor, match=search_str, count=batch_size, _type=type_filter)
         return [hit.decode(TXT_ENCODING) for hit in hits[1]]
+
+    def _get_all_users(
+        self,
+        search_str: Optional[str] = None,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+    ) -> dict[str, list[int]]:
+        """
+        Receive key-value results for for all users.
+        :param search_str: Search string.
+        :param batch_size: Number of returned results.
+        :return: Dictionary mapping each key to a list of its members
+
+        References:
+            - https://redis-py.readthedocs.io/en/stable/#redis.Redis.scan_iter
+        """
+        users_data = {}
+        for key in self._client.scan_iter(match=search_str, count=batch_size):
+            key_str = key.decode(TXT_ENCODING)
+            members = [int(member.decode(TXT_ENCODING)) for member in self._client.smembers(key_str)]
+            users_data[key_str] = members
+
+        return users_data
+
+    def get_most_similar_user(self, user: str, threshold: int = DEFAULT_SIMILAR_PREFERENCE) -> Sequence[object]:
+        """
+        Get users with similar preferences to the given user.
+        :param user: The username of the user for whom similar users are to be found.
+        :param threshold: Minimum number of common preferences to consider a user similar.
+        :return: List of usernames for users with similar preferences.
+        """
+        current_user_preferences = self.get_user_preferences(user)[0]
+        all_users = self._get_all_users()
+        similar_users = {}
+        for other_user, data in all_users.items():
+            compared_user = other_user.split(':')[1] if len(other_user.split(':')) == 4 else ''
+            intersection_list = list(set(current_user_preferences).intersection(data))
+            if (user != compared_user) and (len(intersection_list) >= threshold):
+                similar_users[compared_user] = data
+        max_user = max(similar_users.items(), key=operator.itemgetter(1))
+        most_similar_user = next(iter(max_user))
+
+        return most_similar_user
 
     def get_user_credentials(self) -> dict[Any, Any]:
         """

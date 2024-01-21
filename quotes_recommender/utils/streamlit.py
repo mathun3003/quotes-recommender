@@ -21,8 +21,8 @@ def switch_opposite_button(button_key: str) -> None:
     :param button_key: The unique key of the button that has to be switched.
     :return: None
     """
-    # set state of opposite checkbox to the negated value of the current checkbox
-    st.session_state[button_key] = False if st.session_state[button_key] is True else False
+    # set state of opposite checkbox to False
+    st.session_state[button_key] = False
 
 
 @st.cache_resource
@@ -50,15 +50,15 @@ def extract_tag_filters() -> list[str]:
     Fetches the quote tags from goodreads.com/quotes
     :return:
     """
-
+    # set tag css selector
     tag_selector: Final[str] = 'li.greyText'
-
+    # make request
     response = requests.get(str(GOODREADS_QUOTES_URL), timeout=60)
-
     if not response.ok:
         response.raise_for_status()
-
+    # parse tags
     soup = BeautifulSoup(response.text, 'html.parser')
+    # extract tags
     options = sorted(list(set(option.text.split()[0].strip() for option in soup.select(tag_selector))))
     return options
 
