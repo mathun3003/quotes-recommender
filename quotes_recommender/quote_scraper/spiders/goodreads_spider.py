@@ -7,13 +7,14 @@ from scrapy.exceptions import StopDownload
 from scrapy.http import Response
 
 from quotes_recommender.core.constants import GOODREADS_QUOTES_URL
+from quotes_recommender.quote_scraper.constants import GOODREADS_SPIDER_NAME
 from quotes_recommender.quote_scraper.items import QuoteData, QuoteItem, UserItem
 
 
 class GoodreadsSpider(scrapy.Spider):
     """Scraper to extract data from goodreads.com/quotes."""
 
-    name = 'goodreads-spider'
+    name = GOODREADS_SPIDER_NAME
     allowed_domains = [GOODREADS_QUOTES_URL.raw_host]
     start_urls = [GOODREADS_QUOTES_URL]
 

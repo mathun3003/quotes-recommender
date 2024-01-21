@@ -223,7 +223,7 @@ class QdrantVectorStore:
         :return: Page results and next page offset.
         """
         # search for points
-        points = self.client.scroll(
+        points, next_offset = self.client.scroll(
             collection_name=collection,
             scroll_filter=Filter(
                 must=[FieldCondition(key='tags', match=MatchAny(any=tags))] if tags else None,
@@ -232,11 +232,10 @@ class QdrantVectorStore:
             limit=limit,
             offset=offset,
             with_vectors=False,
-            # TODO: get from pydantic model
             with_payload=PayloadSelectorInclude(include=payload_attributes),
         )
         # return points and next_page_offset
-        return points[0], points[1]
+        return points, next_offset
 
     def get_point_count(self, collection: str = DEFAULT_QUOTE_COLLECTION) -> int:
         """

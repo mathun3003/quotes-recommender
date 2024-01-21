@@ -116,10 +116,10 @@ class RedisUserStore:
         :param quote_id: The ID of the quote (point) which should be stored for each user.
         :return: None
         """
-        hash_keys: list[str] = [PreferenceKey(username=user_id).like_key for user_id in user_ids]
+        hash_keys: list[str] = [PreferenceKey(username=str(user_id)).like_key for user_id in user_ids]
         with self._client.pipeline() as pipe:
             for hash_key in hash_keys:
-                pipe.sadd(name=hash_key, *quote_id)
+                pipe.sadd(hash_key, quote_id)
             pipe.execute()
             pipe.close()
 

@@ -2,6 +2,7 @@
 import logging
 
 from quotes_recommender.ml_models.sentence_encoder import SentenceBERT
+from quotes_recommender.quote_scraper.constants import GOODREADS_SPIDER_NAME
 from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
 from quotes_recommender.vector_store.vector_store_singleton import (
     QdrantVectorStoreSingleton,
@@ -51,23 +52,22 @@ class QuotesToQdrantPipeline:
         :param spider: Scrapy spider instance
         :return None
         """
-        # get number of available points in Qdrant
-        count = self.vector_store.get_point_count()
-        # init offset
-        offset: int = 0
-        # scroll all points
-        while count != 0:
-            page_results, next_offset = self.vector_store.scroll_points(
-                payload_attributes=['liking_users'], limit=50, offset=offset
-            )
-            for point in page_results:
-                # get point ID
-                point_id = point.payload.get('id', None)
-                # collect each user ID
-                user_ids = [user.get('user_id', None) for user in point.payload.get('liking_users', None)]
-                # store user preferences
-                self.user_store.store_batch_likes(user_ids=user_ids, quote_id=point_id)
+        # only run for goodreads spider
+        if spider.name == GOODREADS_SPIDER_NAME:
+            # init offset
+            offset: int = 0
+            # scroll all points
+            while offset is not None:
+                page_results, next_offset = self.vector_store.scroll_points(
+                    payload_attributes=['liking_users'], limit=50, offset=offset
+                )
+                for point in page_results:
+                    # get point ID
+                    point_id = point.id
+                    # collect each user ID
+                    user_ids = [user.get('user_id', None) for user in point.payload.get('liking_users', None)]
+                    # store user preferences
+                    self.user_store.store_batch_likes(user_ids=user_ids, quote_id=point_id)
 
-            # increment offset and reduce counter
-            offset += next_offset
-            count -= len(page_results.payload)
+                # reset offset
+                offset = next_offset
