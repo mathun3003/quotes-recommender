@@ -1,10 +1,8 @@
 import json
 import logging
-from typing import Final, Optional, Sequence
+from typing import Optional, Sequence
 
-import requests
 import streamlit as st
-from bs4 import BeautifulSoup
 from qdrant_client.http.models import Record, ScoredPoint
 
 from quotes_recommender.core.constants import TAG_MAPPING_PATH, TXT_ENCODING
@@ -51,7 +49,7 @@ def get_tag_filters() -> list[str]:
     Extracts quote tags from the tag mapping file located at TAG_MAPPING_PATH.
     :returns: A list of unique quote tags obtained from the mapping file.
     """
-    with open(TAG_MAPPING_PATH, 'r') as file:
+    with open(TAG_MAPPING_PATH, 'r', encoding=TXT_ENCODING) as file:
         tag_mapping_file = json.load(file)
     return list(set(tag_mapping_file.values()))
 
