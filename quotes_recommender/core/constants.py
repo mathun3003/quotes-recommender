@@ -15,4 +15,4 @@ SENTENCE_ENCODER_PATH: Final[Path] = DATA_PATH / 'all-mpnet-base-v2'
 LOGO_PATH: Final[Path] = Path('resources') / 'sagesnippet_logo.png'
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-TAG_MAPPING_PATH: Final[Path] = Path(script_dir) / './long_tag_mapping.json'
+TAG_MAPPING_PATH: Final[Path] = Path(script_dir) / './short_tag_mapping.json'
