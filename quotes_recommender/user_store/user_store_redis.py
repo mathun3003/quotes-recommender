@@ -5,13 +5,13 @@ from typing import Any, Mapping, Optional, Sequence
 
 import redis
 
-from quotes_recommender.core.constants import TXT_ENCODING
-from quotes_recommender.user_store.constants import (
+from core.constants import TXT_ENCODING
+from user_store.constants import (
     DEFAULT_BATCH_SIZE,
     DEFAULT_SIMILAR_PREFERENCE,
 )
-from quotes_recommender.user_store.models import CredentialsKey, PreferenceKey
-from quotes_recommender.utils.redis import RedisConfig
+from user_store.models import CredentialsKey, PreferenceKey
+from utils.redis import RedisConfig
 
 logger = logging.getLogger(__name__)
 

@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from quotes_recommender.core.models import QuoteData
+from core.models import QuoteData
 
 
 class UserItem(BaseModel):

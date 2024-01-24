@@ -3,18 +3,22 @@ import streamlit_authenticator as stauth
 from st_pages import show_pages_from_config
 from streamlit_authenticator.exceptions import RegisterError
 
-from quotes_recommender.core.constants import LOGO_PATH
-from quotes_recommender.core.models import UserPreference
-from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
-from quotes_recommender.utils.streamlit import display_quotes
-from quotes_recommender.vector_store.vector_store_singleton import (
+from core.constants import LOGO_PATH
+from core.models import UserPreference
+from utils.qdrant import QdrantConfig
+from vector_store.vector_store_qdrant import QdrantVectorStore
+from user_store.user_store_redis import RedisUserStore
+from utils.redis import RedisConfig
+from user_store.user_store_singleton import RedisUserStoreSingleton
+from utils.streamlit import display_quotes
+from vector_store.vector_store_singleton import (
     QdrantVectorStoreSingleton,
 )
 
 # pylint: disable=duplicate-code
 try:
-    vector_store = QdrantVectorStoreSingleton().vector_store
-    user_store = RedisUserStoreSingleton().user_store
+    vector_store = QdrantVectorStore(qdrant_config=QdrantConfig())
+    user_store = RedisUserStore(redis_config=RedisConfig())
 except AttributeError:
     st.rerun()
 

@@ -29,14 +29,14 @@ WORKDIR /app
 # copy pyproject.toml file
 COPY pyproject.toml /app
 
+# create lock file from pyproject.toml
+RUN poetry lock --no-update
+
+# export lock file to requirements.txt
+RUN poetry export -f requirements.txt --output requirements.txt
+
 # install dependencies
-RUN poetry install --sync --no-ansi --no-root -vvv
-
-# change shell profile
-SHELL ["/bin/bash", "-c"]
-
-# activate venv
-RUN source $(poetry env info --path)/bin/activate
+RUN pip3 install -r requirements.txt
 
 # copy project content
 COPY . /app
@@ -45,4 +45,4 @@ COPY . /app
 EXPOSE 8501
 
 # set entrypoint
-CMD ["poetry", "run", "streamlit", "run", "quotes_recommender/app.py"]
+ENTRYPOINT ["streamlit", "run", "quotes_recommender/app.py", "--server.port=8501", "--server.address=0.0.0.0"]

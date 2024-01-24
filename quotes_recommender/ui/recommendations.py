@@ -1,13 +1,19 @@
 import streamlit as st
 import streamlit_authenticator as stauth
 
-from quotes_recommender.utils.streamlit import display_quotes
+from utils.streamlit import display_quotes
+
+from user_store.user_store_redis import RedisUserStore
+from utils.redis import RedisConfig
+
+from utils.qdrant import QdrantConfig
+from vector_store.vector_store_qdrant import QdrantVectorStore
 
 try:
-    from quotes_recommender.user_store.user_store_singleton import (
+    from user_store.user_store_singleton import (
         RedisUserStoreSingleton,
     )
-    from quotes_recommender.vector_store.vector_store_singleton import (
+    from vector_store.vector_store_singleton import (
         QdrantVectorStoreSingleton,
     )
 except KeyError:
@@ -18,8 +24,8 @@ st.set_page_config(layout='wide')
 
 # pylint: disable=duplicate-code
 try:
-    vector_store = QdrantVectorStoreSingleton().vector_store
-    user_store = RedisUserStoreSingleton().user_store
+    vector_store = QdrantVectorStore(qdrant_config=QdrantConfig())
+    user_store = RedisUserStore(redis_config=RedisConfig())
 except AttributeError:
     st.rerun()
 

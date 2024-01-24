@@ -1,8 +1,8 @@
 from typing import Any
 
-from quotes_recommender.user_store.user_store_redis import RedisUserStore
-from quotes_recommender.utils.redis import RedisConfig
-from quotes_recommender.utils.singleton import Singleton
+from user_store.user_store_redis import RedisUserStore
+from utils.redis import RedisConfig
+from utils.singleton import Singleton
 
 
 class RedisUserStoreSingleton(Singleton):

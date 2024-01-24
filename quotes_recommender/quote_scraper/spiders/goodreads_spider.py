@@ -6,9 +6,9 @@ import scrapy
 from scrapy.exceptions import StopDownload
 from scrapy.http import Response
 
-from quotes_recommender.core.constants import GOODREADS_QUOTES_URL
-from quotes_recommender.quote_scraper.constants import GOODREADS_SPIDER_NAME
-from quotes_recommender.quote_scraper.items import QuoteData, QuoteItem, UserItem
+from core.constants import GOODREADS_QUOTES_URL
+from quote_scraper.constants import GOODREADS_SPIDER_NAME
+from quote_scraper.items import QuoteData, QuoteItem, UserItem
 
 
 class GoodreadsSpider(scrapy.Spider):

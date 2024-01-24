@@ -6,12 +6,15 @@ import streamlit as st
 from bs4 import BeautifulSoup
 from qdrant_client.http.models import Record, ScoredPoint
 
-from quotes_recommender.core.constants import GOODREADS_QUOTES_URL
-from quotes_recommender.core.models import UserPreference
-from quotes_recommender.ml_models.sentence_encoder import SentenceBERT
-from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
+from core.constants import GOODREADS_QUOTES_URL
+from core.models import UserPreference
+from ml_models.sentence_encoder import SentenceBERT
+from user_store.user_store_singleton import RedisUserStoreSingleton
 
-user_store = RedisUserStoreSingleton().user_store
+from user_store.user_store_redis import RedisUserStore
+from utils.redis import RedisConfig
+
+user_store = RedisUserStore(redis_config=RedisConfig())
 logger = logging.getLogger(__name__)
 
 

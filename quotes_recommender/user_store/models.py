@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from quotes_recommender.core.models import ForbidExtraModel
+from core.models import ForbidExtraModel
 
 
 class BaseKey(ForbidExtraModel):

@@ -27,9 +27,9 @@ from qdrant_client.http.models import (
 )
 from requests import HTTPError
 
-from quotes_recommender.quote_scraper.items import ExtendedQuoteData, QuoteItem
-from quotes_recommender.utils.qdrant import QdrantConfig
-from quotes_recommender.vector_store.constants import (
+from quote_scraper.items import ExtendedQuoteData, QuoteItem
+from utils.qdrant import QdrantConfig
+from vector_store.constants import (
     DEFAULT_EMBEDDING_SIZE,
     DEFAULT_PAYLOAD_INDEX,
     DEFAULT_QUOTE_COLLECTION,
@@ -64,18 +64,18 @@ class QdrantVectorStore:
             timeout=timeout,
         )
 
-        # test connection
-        if ping:
-            try:
-                # use workaround instead of service API as it contains a bug
-                requests.get(
-                    f'{qdrant_config.https_url if qdrant_config.use_https else qdrant_config.http_url}/healthz',
-                    timeout=60,
-                )
-            except ConnectionError as exc:
-                logger.error("Cannot connect to Qdrant. Is the database running?")
-                raise exc
-            logger.info('Connected to Qdrant.')
+        # # test connection
+        # if ping:
+        #     try:
+        #         # use workaround instead of service API as it contains a bug
+        #         requests.get(
+        #             f'{qdrant_config.https_url if qdrant_config.use_https else qdrant_config.http_url}/healthz',
+        #             timeout=60,
+        #         )
+        #     except ConnectionError as exc:
+        #         logger.error("Cannot connect to Qdrant. Is the database running?")
+        #         raise exc
+        #     logger.info('Connected to Qdrant.')
 
         try:
             # try to fetch default collection
@@ -95,7 +95,6 @@ class QdrantVectorStore:
             vectors_config=VectorParams(
                 size=DEFAULT_EMBEDDING_SIZE, distance=Distance.COSINE, on_disk=self.on_disk_payload
             ),
-            quantization_config=ScalarQuantizationConfig(type=ScalarType.INT8, always_ram=True),
         ):
             raise ConnectionError(f'Could not create {DEFAULT_QUOTE_COLLECTION} collection.')
         # create default index

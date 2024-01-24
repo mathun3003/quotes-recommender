@@ -1,12 +1,18 @@
 # pylint: disable=unused-argument
 import logging
 
-from quotes_recommender.ml_models.sentence_encoder import SentenceBERT
-from quotes_recommender.quote_scraper.constants import GOODREADS_SPIDER_NAME
-from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
-from quotes_recommender.vector_store.vector_store_singleton import (
+from ml_models.sentence_encoder import SentenceBERT
+from quote_scraper.constants import GOODREADS_SPIDER_NAME
+from user_store.user_store_singleton import RedisUserStoreSingleton
+from vector_store.vector_store_singleton import (
     QdrantVectorStoreSingleton,
 )
+
+from user_store.user_store_redis import RedisUserStore
+from utils.redis import RedisConfig
+
+from utils.qdrant import QdrantConfig
+from vector_store.vector_store_qdrant import QdrantVectorStore
 
 logger = logging.getLogger(__name__)
 model = SentenceBERT()
@@ -43,8 +49,8 @@ class QuotesToQdrantPipeline:
         """Open the spider and initialize the Qdrant vector store.
         :param spider: The Scrapy spider instance.
         """
-        self.vector_store = QdrantVectorStoreSingleton().vector_store
-        self.user_store = RedisUserStoreSingleton().user_store
+        self.vector_store = QdrantVectorStore(qdrant_config=QdrantConfig())
+        self.user_store = RedisUserStore(redis_config=RedisConfig())
 
     def close_spider(self, spider) -> None:
         """Close the spider.

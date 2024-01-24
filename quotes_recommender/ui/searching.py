@@ -1,21 +1,24 @@
 import streamlit as st
 
-from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
-from quotes_recommender.utils.streamlit import (
+from user_store.user_store_singleton import RedisUserStoreSingleton
+from utils.streamlit import (
     click_search_button,
     display_quotes,
     extract_tag_filters,
     load_sentence_bert,
 )
-from quotes_recommender.vector_store.vector_store_singleton import (
+from vector_store.vector_store_singleton import (
     QdrantVectorStoreSingleton,
 )
+
+from user_store.user_store_redis import RedisUserStore
+from utils.redis import RedisConfig
 
 st.set_page_config(layout='centered')
 
 try:
-    user_store = RedisUserStoreSingleton().user_store
-    vector_store = QdrantVectorStoreSingleton().vector_store
+    user_store = RedisUserStore(redis_config=RedisConfig())
+    vector_store = QdrantVectorStore(qdrant_config=QdrantConfig())
 except AttributeError:
     st.rerun()
 sentence_bert = load_sentence_bert()

@@ -7,8 +7,8 @@ import numpy.typing as npt
 import torch
 from sentence_transformers import SentenceTransformer
 
-from quotes_recommender.core.constants import SENTENCE_ENCODER_PATH
-from quotes_recommender.utils.singleton import Singleton
+from core.constants import SENTENCE_ENCODER_PATH
+from utils.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 

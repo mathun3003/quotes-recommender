@@ -3,7 +3,7 @@ from typing import Any, Final, Generator
 
 import scrapy
 
-from quotes_recommender.quote_scraper.items import QuoteData, QuoteItem
+from quote_scraper.items import QuoteData, QuoteItem
 
 
 class QuotesSpider(scrapy.Spider):

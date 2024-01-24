@@ -1,4 +1,4 @@
-version: '3.3'
+version: '3.7'
 
 services:
 
@@ -47,13 +47,15 @@ services:
     volumes:
       - .:/app
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8051/_stcore/health"]
+      test: ["CMD", "curl", "--fail", "http://127.0.0.1:8051/_stcore/health"]
       interval: 200s
       timeout: 200s
       retries: 5
     depends_on:
       - redis
       - qdrant
+    env_file:
+      - local.env
 
 volumes:
   qdrant:

@@ -1,8 +1,8 @@
 from typing import Any
 
-from quotes_recommender.utils.qdrant import QdrantConfig
-from quotes_recommender.utils.singleton import Singleton
-from quotes_recommender.vector_store.vector_store_qdrant import QdrantVectorStore
+from utils.qdrant import QdrantConfig
+from utils.singleton import Singleton
+from vector_store.vector_store_qdrant import QdrantVectorStore
 
 
 class QdrantVectorStoreSingleton(Singleton):
