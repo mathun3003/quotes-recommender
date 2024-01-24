@@ -49,7 +49,7 @@ if st.session_state['authentication_status']:
 
     # get ratings for logged-in user
     likes, dislikes = user_store.get_user_preferences(st.session_state['username'])
-    if (not likes) and (not dislikes):
+    if not (likes or dislikes):
         st.info("🔔 You have not specified any preferences. Please specify any on the 'Set Preferences' page.")
         st.stop()
     else:
