@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Final
 
@@ -12,3 +13,6 @@ GOODREADS_QUOTES_URL: Final[URL] = URL("https://www.goodreads.com/quotes")
 DATA_PATH: Final[Path] = Path('data')
 SENTENCE_ENCODER_PATH: Final[Path] = DATA_PATH / 'all-mpnet-base-v2'
 LOGO_PATH: Final[Path] = Path('resources') / 'sagesnippet_logo.png'
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+TAG_MAPPING_PATH: Final[Path] = Path(script_dir) / './short_tag_mapping.json'

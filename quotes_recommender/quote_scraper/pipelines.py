@@ -1,5 +1,7 @@
+import json
 import logging
 
+from quotes_recommender.core.constants import TAG_MAPPING_PATH, TXT_ENCODING
 from quotes_recommender.ml_models.sentence_encoder import SentenceBERT
 from quotes_recommender.vector_store.vector_store_singleton import (
     QdrantVectorStoreSingleton,
@@ -15,6 +17,7 @@ class QuotesToQdrantPipeline:
     def __init__(self):
         """Initialize the pipeline."""
         self.vector_store = None
+        self.tag_mappings = None
 
     def process_item(self, item, spider):  # pylint: disable=unused-argument
         """Process a quote item and upsert the quote into the Qdrant vector store.
@@ -23,15 +26,19 @@ class QuotesToQdrantPipeline:
         """
         embeddings = model.encode_quote(item['data']['quote'])
         dups = self.vector_store.get_similarity_scores(query_embedding=embeddings)
+        # Check for duplicates
         if dups:
-            # Check for duplicates
             logger.warning("####### Duplicate found #######")
             return item
         # Check existence of author with image
         author_name = item['data']['author']
         sim_author = self.vector_store.get_entry_by_author(query_embedding=embeddings, author=author_name)
-        avatar_image = sim_author.payload.get('avatar_img', None)
-        item['data']['avatar_img'] = avatar_image
+        if sim_author:
+            avatar_image = sim_author.payload.get('avatar_img', None)
+            item['data']['avatar_img'] = avatar_image
+        # Check for tag mappings
+        mapped_tags = [self.tag_mappings.get(tag, tag) for tag in item['data']['tags']]
+        item['data']['tags'] = list(set(mapped_tags))
         self.vector_store.upsert_quotes([item], [embeddings])
         return item
 
@@ -40,6 +47,9 @@ class QuotesToQdrantPipeline:
         :param spider: The Scrapy spider instance.
         """
         self.vector_store = QdrantVectorStoreSingleton().vector_store
+        with open(TAG_MAPPING_PATH, 'r', encoding=TXT_ENCODING) as file:
+            self.tag_mappings = json.load(file)
+        file.close()
 
     def close_spider(self, spider) -> None:  # pylint: disable=unused-argument
         """Close the spider.
