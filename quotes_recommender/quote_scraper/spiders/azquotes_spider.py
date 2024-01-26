@@ -52,7 +52,7 @@ class QuotesSpider(scrapy.Spider):
                 continue
 
             quote_result = QuoteItem.model_construct(
-                id=int(id_number),
+                id=f'{id_number}-A',
                 data=QuoteData.model_construct(
                     author=quote.css(self.SELECTOR_AUTHOR).get(),
                     quote=quote.css(self.SELECTOR_TEXT).get(),

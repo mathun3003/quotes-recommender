@@ -86,14 +86,14 @@ class GoodreadsSpider(scrapy.Spider):
         liking_users = response.meta.get('liking_users', []) + current_page_liking_users
         next_user_page = response.css(self.NEXT_SELECTOR).extract_first()
 
-        if next_user_page:  # "page=N" not in
+        if "page=2" not in next_user_page:  # "page=N" not in
             yield scrapy.Request(
                 response.urljoin(next_user_page), callback=self.parse_subpage, meta={'liking_users': liking_users}
             )
         else:
             quote_id = re.search(self.QUOTE_ID_PATTERN, response.url)
             quote_result = QuoteItem.model_construct(
-                id=int(quote_id.group(1)) if quote_id else None,
+                id=f'{quote_id.group(1)}-G' if quote_id else None,
                 data=QuoteData.model_construct(
                     author=response.css(self.QUOTE_AUTHOR_OR_TITLE)
                     .get()
