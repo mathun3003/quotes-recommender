@@ -3,13 +3,14 @@ from typing import Any, Final, Generator
 
 import scrapy
 
+from quote_scraper.constants import AZQUOTES_SPIDER_NAME
 from quote_scraper.items import QuoteData, QuoteItem
 
 
 class QuotesSpider(scrapy.Spider):
     """Scraper to extract data from azquotes.com/quotes."""
 
-    name = "azquotes-spider"
+    name = AZQUOTES_SPIDER_NAME
 
     SELECTOR_AZ: Final[str] = "ul.authors a::attr(href)"
     SELECTOR_POP_AUTHORS: Final[str] = "div.profile.most-popular a::attr(href)"
@@ -52,7 +53,7 @@ class QuotesSpider(scrapy.Spider):
                 continue
 
             quote_result = QuoteItem.model_construct(
-                id=int(id_number),
+                id=f'{id_number}-A',
                 data=QuoteData.model_construct(
                     author=quote.css(self.SELECTOR_AUTHOR).get(),
                     quote=quote.css(self.SELECTOR_TEXT).get(),

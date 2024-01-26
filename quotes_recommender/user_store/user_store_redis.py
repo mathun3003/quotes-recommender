@@ -90,7 +90,6 @@ class RedisUserStore:
             return None
         # get user with the greatest set intersection
         most_similar_user = max(similar_users.items(), key=operator.itemgetter(1))[0]
-        # most_similar_user = next(iter(max_user))
         # return username of most similar user
         return most_similar_user
 

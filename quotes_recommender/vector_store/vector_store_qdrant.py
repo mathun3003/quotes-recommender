@@ -18,8 +18,6 @@ from qdrant_client.http.models import (
     PointStruct,
     RecommendStrategy,
     Record,
-    ScalarQuantizationConfig,
-    ScalarType,
     ScoredPoint,
     SearchParams,
     UpdateStatus,
@@ -324,4 +322,6 @@ class QdrantVectorStore:
             score_threshold=0,
         )
         # return payload results
-        return result[0]
+        if result:
+            return result[0]
+        return None

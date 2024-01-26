@@ -4,7 +4,7 @@ from user_store.user_store_singleton import RedisUserStoreSingleton
 from utils.streamlit import (
     click_search_button,
     display_quotes,
-    extract_tag_filters,
+    get_tag_filters,
     load_sentence_bert,
 )
 from vector_store.vector_store_singleton import (
@@ -41,7 +41,7 @@ st.divider()
 
 # specify user inputs
 query = st.text_input(label="User query", placeholder="What are you looking for?")
-tags = st.multiselect(label="Filters", options=extract_tag_filters(), placeholder="Filter by tags.")
+tags = st.multiselect(label="Filters", options=get_tag_filters(), placeholder="Filter by tags.")
 submitted = st.button(label="Search for Quotes", use_container_width=True, type="primary", on_click=click_search_button)
 st.divider()
 

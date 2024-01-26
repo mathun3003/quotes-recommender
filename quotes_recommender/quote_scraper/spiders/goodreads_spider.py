@@ -16,7 +16,7 @@ class GoodreadsSpider(scrapy.Spider):
 
     name = GOODREADS_SPIDER_NAME
     allowed_domains = [GOODREADS_QUOTES_URL.raw_host]
-    start_urls = [GOODREADS_QUOTES_URL]
+    start_urls = [str(GOODREADS_QUOTES_URL)]
 
     # CSS filter masks
     QUOTE_SELECTOR: Final[str] = 'div.quote'
@@ -94,7 +94,7 @@ class GoodreadsSpider(scrapy.Spider):
         else:
             quote_id = re.search(self.QUOTE_ID_PATTERN, response.url)
             quote_result = QuoteItem.model_construct(
-                id=int(quote_id.group(1)) if quote_id else None,
+                id=f'{quote_id.group(1)}-G' if quote_id else response.url,
                 data=QuoteData.model_construct(
                     author=response.css(self.QUOTE_AUTHOR_OR_TITLE)
                     .get()

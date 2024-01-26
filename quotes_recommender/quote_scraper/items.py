@@ -28,5 +28,5 @@ class ExtendedQuoteData(QuoteData):
 class QuoteItem(BaseModel):
     """Item defining a scraped quote."""
 
-    id: int = Field(description="The unique ID of the quote.")
+    id: str = Field(description="The unique ID of the quote.")
     data: ExtendedQuoteData = Field(description="(Meta) data of the quote.")
