@@ -18,8 +18,6 @@ from qdrant_client.http.models import (
     PointStruct,
     RecommendStrategy,
     Record,
-    ScalarQuantizationConfig,
-    ScalarType,
     ScoredPoint,
     SearchParams,
     UpdateStatus,
@@ -95,7 +93,6 @@ class QdrantVectorStore:
             vectors_config=VectorParams(
                 size=DEFAULT_EMBEDDING_SIZE, distance=Distance.COSINE, on_disk=self.on_disk_payload
             ),
-            quantization_config=ScalarQuantizationConfig(type=ScalarType.INT8, always_ram=True),
         ):
             raise ConnectionError(f'Could not create {DEFAULT_QUOTE_COLLECTION} collection.')
         # create default index
@@ -325,4 +322,6 @@ class QdrantVectorStore:
             score_threshold=0,
         )
         # return payload results
-        return result[0]
+        if result:
+            return result[0]
+        return None

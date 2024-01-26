@@ -3,7 +3,7 @@ import streamlit_authenticator as stauth
 
 from quotes_recommender.core.models import UserPreference
 from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
-from quotes_recommender.utils.streamlit import display_quotes, extract_tag_filters
+from quotes_recommender.utils.streamlit import display_quotes, get_tag_filters
 from quotes_recommender.vector_store.vector_store_singleton import (
     QdrantVectorStoreSingleton,
 )
@@ -41,7 +41,7 @@ if st.session_state['authentication_status']:
         # select by tags
         tags = st.multiselect(
             label="Tags",
-            options=extract_tag_filters(),
+            options=get_tag_filters(),
             help="Select one or multiple tags you would like to filter for.",
             placeholder="Filter by tags.",
         )

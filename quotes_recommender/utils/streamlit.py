@@ -1,12 +1,11 @@
+import json
 import logging
-from typing import Final, Optional, Sequence
+from typing import Optional, Sequence
 
-import requests
 import streamlit as st
-from bs4 import BeautifulSoup
 from qdrant_client.http.models import Record, ScoredPoint
 
-from quotes_recommender.core.constants import GOODREADS_QUOTES_URL
+from quotes_recommender.core.constants import TAG_MAPPING_PATH, TXT_ENCODING
 from quotes_recommender.core.models import UserPreference
 from quotes_recommender.ml_models.sentence_encoder import SentenceBERT
 from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
@@ -45,22 +44,14 @@ def click_search_button() -> None:
 
 
 @st.cache_data
-def extract_tag_filters() -> list[str]:
+def get_tag_filters() -> list[str]:
     """
-    Fetches the quote tags from goodreads.com/quotes
-    :return:
+    Extracts quote tags from the tag mapping file located at TAG_MAPPING_PATH.
+    :returns: A list of unique quote tags obtained from the mapping file.
     """
-    # set tag css selector
-    tag_selector: Final[str] = 'li.greyText'
-    # make request
-    response = requests.get(str(GOODREADS_QUOTES_URL), timeout=60)
-    if not response.ok:
-        response.raise_for_status()
-    # parse tags
-    soup = BeautifulSoup(response.text, 'html.parser')
-    # extract tags
-    options = sorted(list(set(option.text.split()[0].strip() for option in soup.select(tag_selector))))
-    return options
+    with open(TAG_MAPPING_PATH, 'r', encoding=TXT_ENCODING) as file:
+        tag_mapping_file = json.load(file)
+    return list(set(tag_mapping_file.values()))
 
 
 # pylint: disable=too-many-locals
