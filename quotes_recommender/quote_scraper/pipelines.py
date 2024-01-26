@@ -1,8 +1,11 @@
+# pylint: disable=unused-argument
 import json
 import logging
 
 from quotes_recommender.core.constants import TAG_MAPPING_PATH, TXT_ENCODING
 from quotes_recommender.ml_models.sentence_encoder import SentenceBERT
+from quotes_recommender.quote_scraper.constants import GOODREADS_SPIDER_NAME
+from quotes_recommender.user_store.user_store_singleton import RedisUserStoreSingleton
 from quotes_recommender.vector_store.vector_store_singleton import (
     QdrantVectorStoreSingleton,
 )
@@ -17,11 +20,12 @@ class QuotesToQdrantPipeline:
     def __init__(self):
         """Initialize the pipeline."""
         self.vector_store = None
+        self.user_store = None
         self.tag_mappings = None
 
-    def process_item(self, item, spider):  # pylint: disable=unused-argument
+    def process_item(self, item, spider):
         """Process a quote item and upsert the quote into the Qdrant vector store.
-        :param item (dict): An item containing quote data.
+        :param item: An item containing quote data.
         :param spider: The Scrapy spider instance.
         """
         embeddings = model.encode_quote(item['data']['quote'])
@@ -42,18 +46,41 @@ class QuotesToQdrantPipeline:
         self.vector_store.upsert_quotes([item], [embeddings])
         return item
 
-    def open_spider(self, spider) -> None:  # pylint: disable=unused-argument
+    def open_spider(self, spider) -> None:
         """Open the spider and initialize the Qdrant vector store.
         :param spider: The Scrapy spider instance.
         """
         self.vector_store = QdrantVectorStoreSingleton().vector_store
+        self.user_store = RedisUserStoreSingleton().user_store
         with open(TAG_MAPPING_PATH, 'r', encoding=TXT_ENCODING) as file:
             self.tag_mappings = json.load(file)
         file.close()
 
-    def close_spider(self, spider) -> None:  # pylint: disable=unused-argument
+    def close_spider(self, spider) -> None:
         """Close the spider.
-        Optionally performs cleanup operations when the spider is closed.
-        :param The Scrapy spider instance.
+        Registers user preferences in Redis of scraped users.
+        :param spider: Scrapy spider instance
+        :return None
         """
-        # Optionally, add cleanup code here
+        # only run for goodreads spider
+        if spider.name == GOODREADS_SPIDER_NAME:
+            # init offset
+            offset: int = 0
+            # scroll all points
+            while offset is not None:
+                page_results, next_offset = self.vector_store.scroll_points(
+                    payload_attributes=['liking_users'], limit=50, offset=offset
+                )
+                for point in page_results:
+                    # get point ID
+                    point_id = point.id
+                    # collect each user ID
+                    user_ids = [user.get('user_id', None) for user in point.payload.get('liking_users', None)]
+                    # store user preferences
+                    self.user_store.store_likes_batch(user_ids=user_ids, quote_id=point_id)
+
+                # reset offset
+                offset = next_offset
+
+            # remove those sets that consist of less than N records
+            self.user_store.clean_up_user_store()

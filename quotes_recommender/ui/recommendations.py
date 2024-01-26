@@ -14,7 +14,7 @@ except KeyError:
     st.rerun()
 
 # set page layout
-st.set_page_config(layout='centered')
+st.set_page_config(layout='wide')
 
 # pylint: disable=duplicate-code
 try:
@@ -45,14 +45,49 @@ if st.session_state['authentication_status']:
     )
     st.divider()
 
+    item_item_col, user_user_col = st.columns(2)
+
     # get ratings for logged-in user
     likes, dislikes = user_store.get_user_preferences(st.session_state['username'])
-    if (not likes) and (not dislikes):
+    if not (likes or dislikes):
         st.info("🔔 You have not specified any preferences. Please specify any on the 'Set Preferences' page.")
         st.stop()
     else:
-        # get item-item recommendations
-        recommendations = vector_store.get_item_item_recommendations(positives=likes, negatives=dislikes)
-        display_quotes(recommendations)
+        with item_item_col:
+            st.write('### Quotes you might also be interested in')
+            # get item-item recommendations
+            item_item_recommendations = vector_store.get_item_item_recommendations(positives=likes, negatives=dislikes)
+            display_quotes(item_item_recommendations)
+    with user_user_col:
+        # get user-user recommendations
+        with st.spinner('Hold tight! We are getting some recommendations for you... 🔍', cache=True):
+            # get most similar user
+            most_similar_user = user_store.get_most_similar_user(user=st.session_state['username'])
+        # in case no similar user were found
+        if not most_similar_user:
+            st.info(
+                """
+            ⁉️ Oops, it seems you have a very special taste.
+            Please provide more or other preferences in order to see further recommendations.
+            """
+            )
+            st.stop()
+        # get likes of most similar user
+        most_similar_user_likes, _ = user_store.get_user_preferences(most_similar_user)
+        # get non-symmetric set intersection
+        user_user_quote_ids: list[int | str] = list(set(most_similar_user_likes).difference(likes))
+        # get points
+        user_user_recommendations = vector_store.search_points(user_user_quote_ids, limit=10)
+        if not user_user_recommendations:
+            st.info(
+                """
+            ⁉️ Oops, it seems you have a very special taste.
+            Please provide more or other preferences in order to see further recommendations.
+            """
+            )
+        # display recommendations
+        st.write('### Similar users also liked')
+        display_quotes(user_user_recommendations)
+
 else:
     st.info('🔔 Please login/register to see your recommendations.')
