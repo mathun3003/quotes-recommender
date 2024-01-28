@@ -18,6 +18,10 @@ NEWSPIDER_MODULE = "quotes_recommender.quote_scraper.spiders"
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
 
+# Set logging
+LOG_STDOUT = True
+LOG_FILE = 'data/scrapy_logs.txt'
+
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 # CONCURRENT_REQUESTS = 32
 

@@ -3,7 +3,6 @@ from typing import Any, Optional, Sequence
 
 import numpy as np
 import numpy.typing as npt
-import requests
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from qdrant_client.http.exceptions import UnexpectedResponse
@@ -23,9 +22,8 @@ from qdrant_client.http.models import (
     UpdateStatus,
     VectorParams,
 )
-from requests import HTTPError
-
 from quote_scraper.items import ExtendedQuoteData, QuoteItem
+from requests import HTTPError
 from utils.qdrant import QdrantConfig
 from vector_store.constants import (
     DEFAULT_EMBEDDING_SIZE,

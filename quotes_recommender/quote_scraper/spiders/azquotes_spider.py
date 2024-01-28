@@ -3,8 +3,8 @@ from typing import Any, Final, Generator
 
 import scrapy
 
-from quote_scraper.constants import AZQUOTES_SPIDER_NAME
-from quote_scraper.items import QuoteData, QuoteItem
+from constants import AZQUOTES_SPIDER_NAME
+from items import QuoteData, QuoteItem
 
 
 class QuotesSpider(scrapy.Spider):
