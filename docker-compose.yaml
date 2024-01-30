@@ -55,7 +55,7 @@ services:
       - redis
       - qdrant
     env_file:
-      - local.env
+      - prod.env
 
 volumes:
   qdrant:
