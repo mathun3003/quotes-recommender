@@ -33,7 +33,7 @@ class QuotesToQdrantPipeline:
         :param item: An item containing quote data.
         :param spider: The Scrapy spider instance.
         """
-        embeddings = model.encode_quote(item['data']['quote'])
+        embeddings = model.encode_quote(item['data']['text'])
         dups = self.vector_store.get_similarity_scores(query_embedding=embeddings)
         # Check for duplicates
         if dups:
@@ -77,12 +77,13 @@ class QuotesToQdrantPipeline:
                     payload_attributes=['liking_users'], limit=50, offset=offset
                 )
                 for point in page_results:
-                    # get point ID
-                    point_id = point.id
-                    # collect each user ID
-                    user_ids = [user.get('user_id', None) for user in point.payload.get('liking_users', None)]
-                    # store user preferences
-                    self.user_store.store_likes_batch(user_ids=user_ids, quote_id=point_id)
+                    if point.payload.get('liking_users', None):
+                        # get point ID
+                        point_id = point.id
+                        # collect each user ID
+                        user_ids = [user.get('user_id', None) for user in point.payload.get('liking_users', None)]
+                        # store user preferences
+                        self.user_store.store_likes_batch(user_ids=user_ids, quote_id=point_id)
 
                 # reset offset
                 offset = next_offset

@@ -53,10 +53,10 @@ if submitted and st.session_state.search_button_clicked:
     # perform search
     with st.spinner('Searching for quotes...', cache=True):
         quotes = vector_store.get_content_based_recommendation(
-            query_embedding=sentence_bert.encode_quote(query), tags=[tag.lower() for tag in tags]
+            query_embedding=sentence_bert.encode_quote(query), tags=tags
         )
 
-        if not quotes:
-            st.info("No quotes found. Please search for some other quotes or change filters.")
-            st.stop()
-        display_quotes(quotes, display_buttons=False)
+    if not quotes:
+        st.info("No quotes found. Please search for some other quotes or change filters.")
+        st.stop()
+    display_quotes(quotes, display_buttons=False)

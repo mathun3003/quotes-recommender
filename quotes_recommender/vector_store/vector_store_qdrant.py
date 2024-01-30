@@ -174,8 +174,8 @@ class QdrantVectorStore:
 
     def get_item_item_recommendations(
         self,
-        negatives: Sequence[int],
-        positives: Optional[Sequence[int]] = None,
+        negatives: Sequence[int | str],
+        positives: Optional[Sequence[int | str]] = None,
         limit: int = 10,
         collection: str = DEFAULT_QUOTE_COLLECTION,
     ) -> list[ScoredPoint]:

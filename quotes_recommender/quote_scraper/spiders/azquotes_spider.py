@@ -1,4 +1,5 @@
 import re
+import uuid
 from typing import Any, Final, Generator
 
 import scrapy
@@ -52,11 +53,14 @@ class QuotesSpider(scrapy.Spider):
             if id_number is None:
                 continue
 
+            # construct UUID from str
+            uuid_str = f'{id_number}-A'
+
             quote_result = QuoteItem.model_construct(
-                id=f'{id_number}-A',
+                id=str(uuid.uuid5(uuid.NAMESPACE_DNS, uuid_str)),
                 data=QuoteData.model_construct(
                     author=quote.css(self.SELECTOR_AUTHOR).get(),
-                    quote=quote.css(self.SELECTOR_TEXT).get(),
+                    text=quote.css(self.SELECTOR_TEXT).get(),
                     likes=int(quote.css(self.SELECTOR_LIKES).get()),
                     tags=[quote.lower() for quote in quote.css(self.SELECTOR_TAGS).getall()],
                 ),

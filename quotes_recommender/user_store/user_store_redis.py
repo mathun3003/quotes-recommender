@@ -46,7 +46,7 @@ class RedisUserStore:
         self,
         search_str: Optional[str] = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
-    ) -> dict[str, list[int]]:
+    ) -> dict[str, list[str]]:
         """
         Receive key-value results for all users.
         :param search_str: Search string.
@@ -63,7 +63,7 @@ class RedisUserStore:
             # decode key
             key_str = key.decode(TXT_ENCODING)
             # parse set members
-            members = list(map(lambda member: int(member.decode(TXT_ENCODING)), self._client.smembers(key_str)))
+            members = list(map(lambda member: member.decode(TXT_ENCODING), self._client.smembers(key_str)))
             # get username from hash key
             username: str = key_str.split(':')[1]
             # add results to users data dict
@@ -122,7 +122,7 @@ class RedisUserStore:
         added_fields = self._client.hset(name=hash_key, mapping=credentials)
         return added_fields == len(credentials)
 
-    def get_user_preferences(self, username: str) -> tuple[list[int], list[int]]:
+    def get_user_preferences(self, username: str) -> tuple[list[str], list[str]]:
         """
         Returns all preferences for a given user.
 
@@ -137,8 +137,8 @@ class RedisUserStore:
         dislikes = self._client.smembers(name=hash_keys.dislike_key)
         # return encoded likes and dislikes
         return (
-            list(map(lambda x: int(x.decode(TXT_ENCODING)), likes)),
-            list(map(lambda x: int(x.decode(TXT_ENCODING)), dislikes)),
+            list(map(lambda x: x.decode(TXT_ENCODING), likes)),
+            list(map(lambda x: x.decode(TXT_ENCODING), dislikes)),
         )
 
     def store_likes_batch(self, user_ids: Sequence[str], quote_id: str | int) -> None:

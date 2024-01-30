@@ -60,8 +60,8 @@ if st.session_state['authentication_status']:
         # TODO: get from pydantic model
         quotes, _ = vector_store.scroll_points(
             payload_attributes=['author', 'avatar_img', 'tags', 'text'],
-            limit=10,
-            tags=[tag.lower() for tag in tags],
+            limit=25,
+            tags=tags,
             keyword=keyword,
         )
     # display quotes with buttons
@@ -89,16 +89,6 @@ if st.session_state['authentication_status']:
     elif new_dislikes := set(set_dislikes).difference(set(dislikes)):
         # add them to redis
         if not user_store.set_user_preferences(username=st.session_state['username'], dislikes=new_dislikes):
-            st.toast('Failed to save preferences. Please try again later.', icon='🕠')
-    # if no new likes were added, they have to be unselected
-    elif (not new_likes) and (unset_likes := set(likes).difference(set_likes)):
-        # delete them from redis
-        if not user_store.delete_user_preference(username=st.session_state['username'], likes=list(unset_likes)):
-            st.toast('Failed to save preferences. Please try again later.', icon='🕠')
-    # if no new dislikes were added, they have to be unselected
-    elif (not new_dislikes) and (unset_dislikes := set(dislikes).difference(set_dislikes)):
-        # delete them from redis
-        if not user_store.delete_user_preference(username=st.session_state['username'], dislikes=list(unset_dislikes)):
             st.toast('Failed to save preferences. Please try again later.', icon='🕠')
 
 else:
