@@ -75,7 +75,7 @@ with login_tab:
             Here you can see an overview of the quotes you have (dis-)liked. You can change (dis-)likes here at any time
             or add new (dis-)likes in the Preferences section.
 
-            Based on your preferences, you can see recommendations on the [recommendations page](/Recommendations).
+            Based on your preferences, you can see recommendations on the recommendations page.
             """
             )
             st.divider()

@@ -1,5 +1,6 @@
 import re
 import string
+import uuid
 from typing import Any, Final, Generator
 
 import scrapy
@@ -93,8 +94,10 @@ class GoodreadsSpider(scrapy.Spider):
             )
         else:
             quote_id = re.search(self.QUOTE_ID_PATTERN, response.url)
+            uuid_str: str = f'{quote_id.group(1)}-G' if quote_id else response.url
             quote_result = QuoteItem.model_construct(
-                id=f'{quote_id.group(1)}-G' if quote_id else response.url,
+                # generate UUID from string
+                id=str(uuid.uuid5(uuid.NAMESPACE_DNS, uuid_str)),
                 data=QuoteData.model_construct(
                     author=response.css(self.QUOTE_AUTHOR_OR_TITLE)
                     .get()
@@ -102,7 +105,7 @@ class GoodreadsSpider(scrapy.Spider):
                     .translate(str.maketrans('', '', string.punctuation)),
                     author_profile=response.urljoin(response.css(self.QUOTE_AVATAR).get()),
                     avatar_img=response.css(self.QUOTE_AVATAR_IMG).extract_first(),
-                    quote=response.css(self.QUOTE_TEXT).get().strip().lstrip('“').rstrip('”'),
+                    text=response.css(self.QUOTE_TEXT).get().strip().lstrip('“').rstrip('”'),
                     likes=num_likes,
                     feed_url=response.url,
                     tags=response.css(self.QUOTE_TAGS).extract(),
