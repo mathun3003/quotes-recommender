@@ -40,7 +40,7 @@ class QdrantVectorStore:
     """Redis document store class for inserting, querying, and searching tasks"""
 
     def __init__(
-        self, qdrant_config: QdrantConfig, on_disk: bool = True, timeout: float = 60.0, ping: bool = True
+        self, qdrant_config: QdrantConfig, on_disk: bool = True, timeout: Optional[int] = 60, ping: bool = True
     ) -> None:
         """
         Init Qdrant vector store instance.
