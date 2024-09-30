@@ -48,7 +48,7 @@ if submitted and st.session_state.search_button_clicked:
         st.error('Please enter a search query.')
         st.stop()
     # perform search
-    with st.spinner('Searching for quotes...', cache=True):
+    with st.spinner('Searching for quotes...', _cache=True):
         quotes = vector_store.get_content_based_recommendation(
             query_embedding=sentence_bert.encode_quote(query), tags=tags
         )

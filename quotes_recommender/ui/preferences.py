@@ -37,7 +37,7 @@ if st.session_state['authentication_status']:
     """
     )
     st.divider()
-    with st.spinner('Loading filters...', cache=True):
+    with st.spinner('Loading filters...', _cache=True):
         # select by tags
         tags = st.multiselect(
             label="Tags",

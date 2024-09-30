@@ -60,7 +60,7 @@ if st.session_state['authentication_status']:
             display_quotes(item_item_recommendations)
     with user_user_col:
         # get user-user recommendations
-        with st.spinner('Hold tight! We are getting some recommendations for you... 🔍', cache=True):
+        with st.spinner('Hold tight! We are getting some recommendations for you... 🔍', _cache=True):
             # get most similar user
             most_similar_user = user_store.get_most_similar_user(user=st.session_state['username'])
         # in case no similar user were found
