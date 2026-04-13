@@ -5845,14 +5845,14 @@ tests = ["mock (==5.1.0)", "mypy (==0.971)", "paramiko (==3.3.1)", "pytest (==7.
 
 [[package]]
 name = "scrapy"
-version = "2.13.4"
+version = "2.14.2"
 description = "A high-level Web Crawling and Web Scraping framework"
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "scrapy-2.13.4-py3-none-any.whl", hash = "sha256:9bf36700aefa4983cc48b2cb0e1564161a340e19f73862778e2ed44ec5bbde6a"},
-    {file = "scrapy-2.13.4.tar.gz", hash = "sha256:e09bce40c56b56f9f86b0d078a0e5cdd08283c83076170ce7a8eec7189ac2493"},
+    {file = "scrapy-2.14.2-py3-none-any.whl", hash = "sha256:dc6ddf6e1601fc6c50191d2e4d4a65497e37c4b848f542f21c9278a55f86af42"},
+    {file = "scrapy-2.14.2.tar.gz", hash = "sha256:23bf5d37503ad16973bd09604b9c36249bd4bbc282c48ddedbf58105d4639337"},
 ]
 
 [package.dependencies]
@@ -5861,7 +5861,7 @@ cssselect = ">=0.9.1"
 defusedxml = ">=0.7.1"
 itemadapter = ">=0.1.0"
 itemloaders = ">=1.0.1"
-lxml = ">=4.6.0"
+lxml = ">=4.6.4"
 packaging = "*"
 parsel = ">=1.5.0"
 protego = ">=0.1.15"
@@ -7288,4 +7288,4 @@ notebooks = ["jupyter"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.12"
-content-hash = "43a6c55ab2965de4fedf384e936a635d98cef8d47f91d7265e944b1c75b9899d"
+content-hash = "d072c4ebb091318862bbe3264b847968ab36ea1a9440ca8d83e2001e8c2b8a78"
