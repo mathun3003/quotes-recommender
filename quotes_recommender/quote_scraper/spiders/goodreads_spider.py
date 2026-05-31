@@ -45,15 +45,14 @@ class GoodreadsSpider(scrapy.Spider):
         """
         Function to select data from an object.
         :param response: web response from scrapy
-        :param kwargs: additional kwargs
         :return: Generator object
         """
         for feed in response.css(self.QUOTE_FEED).extract():
-            if feed is not None:
+            if feed:
                 yield scrapy.Request(response.urljoin(feed), callback=self.parse_subpage)
 
         next_page = response.css(self.NEXT_SELECTOR).extract_first()
-        if next_page is not None:
+        if next_page:
             yield scrapy.Request(response.urljoin(next_page))
 
     def extract_liked_user_id_name(self, to_be_extracted):
