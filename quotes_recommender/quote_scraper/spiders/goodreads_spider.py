@@ -1,7 +1,7 @@
 import re
 import string
 import uuid
-from typing import Any, Final, Generator
+from typing import Final, Generator
 
 import scrapy
 from scrapy.exceptions import StopDownload
@@ -41,15 +41,15 @@ class GoodreadsSpider(scrapy.Spider):
     USER_LIKED_ID_PATTERN: Final[str] = r'/user\/show\/(\d+)-?([a-zA-Z0-9_-]+)'
     QUOTE_ID_PATTERN: Final[str] = r'/quotes/(\d+)-\w+'
 
-    def parse(self, response: Response, **kwargs: Any) -> Generator[QuoteItem, None, None]:
+    def parse(self, response: Response) -> Generator[scrapy.Request, None, None]:
         """
         Function to select data from an object.
         :param response: web response from scrapy
-        :param kwargs: additional kwargs
         :return: Generator object
         """
         for feed in response.css(self.QUOTE_FEED).extract():
-            yield scrapy.Request(response.urljoin(feed), callback=self.parse_subpage)
+            if feed:
+                yield scrapy.Request(response.urljoin(feed), callback=self.parse_subpage)
 
         next_page = response.css(self.NEXT_SELECTOR).extract_first()
         if next_page:
@@ -68,13 +68,17 @@ class GoodreadsSpider(scrapy.Spider):
             return UserItem(user_id=int(user_id), user_name=user_name)
         return None
 
-    def parse_subpage(self, response: Response) -> Generator[dict, None, None]:
+    # pylint: disable=too-many-locals
+    def parse_subpage(self, response: Response) -> Generator[scrapy.Request | dict, None, None]:
         """
         Function to crawl subpages from a starting url
         :param response: web response from scrapy
         :return: list user URLs
         """
-        num_likes_list: list[str] = re.findall(self.NUM_LIKES_REGEX, response.css(self.QUOTE_LIKES).get())
+        likes_text = response.css(self.QUOTE_LIKES).get()
+        if likes_text is None:
+            raise ValueError('No likes text found on page.')
+        num_likes_list: list[str] = re.findall(self.NUM_LIKES_REGEX, likes_text)
         if len(num_likes_list) > 1:
             raise StopDownload(fail=True)
         if not num_likes_list[0].isdigit():
@@ -88,24 +92,34 @@ class GoodreadsSpider(scrapy.Spider):
         liking_users = response.meta.get('liking_users', []) + current_page_liking_users
         next_user_page = response.css(self.NEXT_SELECTOR).extract_first()
 
-        if next_user_page:  # "page=N" not in
+        if next_user_page:
             yield scrapy.Request(
                 response.urljoin(next_user_page), callback=self.parse_subpage, meta={'liking_users': liking_users}
             )
         else:
             quote_id = re.search(self.QUOTE_ID_PATTERN, response.url)
             uuid_str: str = f'{quote_id.group(1)}-G' if quote_id else response.url
+            author_raw = response.css(self.QUOTE_AUTHOR_OR_TITLE).get()
+            if author_raw is None:
+                raise ValueError('No author found on page.')
+            author = author_raw.strip().translate(str.maketrans('', '', string.punctuation))
+            author_profile_raw = response.css(self.QUOTE_AVATAR).get()
+            if author_profile_raw is None:
+                raise ValueError('No author profile found on page.')
+            author_profile = response.urljoin(author_profile_raw)
+            avatar_img = response.css(self.QUOTE_AVATAR_IMG).extract_first()
+            text_raw = response.css(self.QUOTE_TEXT).get()
+            if text_raw is None:
+                raise ValueError('No quote text found on page.')
+            text = text_raw.strip().lstrip('“').rstrip('”')
             quote_result = QuoteItem.model_construct(
                 # generate UUID from string
                 id=str(uuid.uuid5(uuid.NAMESPACE_DNS, uuid_str)),
                 data=QuoteData.model_construct(
-                    author=response.css(self.QUOTE_AUTHOR_OR_TITLE)
-                    .get()
-                    .strip()
-                    .translate(str.maketrans('', '', string.punctuation)),
-                    author_profile=response.urljoin(response.css(self.QUOTE_AVATAR).get()),
-                    avatar_img=response.css(self.QUOTE_AVATAR_IMG).extract_first(),
-                    text=response.css(self.QUOTE_TEXT).get().strip().lstrip('“').rstrip('”'),
+                    author=author,
+                    author_profile=author_profile,
+                    avatar_img=avatar_img,
+                    text=text,
                     likes=num_likes,
                     feed_url=response.url,
                     tags=response.css(self.QUOTE_TAGS).extract(),
