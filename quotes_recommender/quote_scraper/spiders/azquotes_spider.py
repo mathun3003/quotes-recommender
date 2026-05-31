@@ -1,6 +1,6 @@
 import re
 import uuid
-from typing import Any, Final, Generator
+from typing import Final, Generator
 
 import scrapy
 
@@ -31,7 +31,7 @@ class QuotesSpider(scrapy.Spider):
         url = "https://www.azquotes.com/quotes/authors/a/"
         yield scrapy.Request(url=url, callback=self.parse)
 
-    def parse(self, response, **kwargs: Any) -> Generator[QuoteItem, None, None]:
+    def parse(self, response) -> Generator[QuoteItem, None, None]:
         """Scraping through the alphabet regarding quotes"""
         alphabet = response.css(self.SELECTOR_AZ).getall()
         for url in alphabet:
